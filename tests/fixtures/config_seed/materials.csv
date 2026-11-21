@@ -1,0 +1,16 @@
+id,category,display_name,components_bottom_to_top,conducting,sio2_thickness_nm,status,source,notes
+graphene,2d,Graphene,,yes,,approved,"User request 2026-11-16: '2D materials ... graphene, graphite, BN, WSe2, MoTe2, WS2, MoS2, MoSe2'",Thickness given as a layer count
+graphite,2d,Graphite,,yes,,approved,User request 2026-11-16,Gates; thickness in nm
+hBN,2d,hBN,,no,,approved,User request 2026-11-16 ('BN'),Dielectric / encapsulation
+WSe2,2d,WSe2,,semiconductor,,approved,User request 2026-11-16,
+MoTe2,2d,MoTe2,,semiconductor,,approved,User request 2026-11-16,"Literature (Xu 2024, Park 2023): handled in an Ar glovebox, O2/H2O < 0.1 ppm"
+WS2,2d,WS2,,semiconductor,,approved,User request 2026-11-16,
+MoS2,2d,MoS2,,semiconductor,,approved,User request 2026-11-16,
+MoSe2,2d,MoSe2,,semiconductor,,approved,User request 2026-11-16,
+Au/Cr,metal,Cr/Au,Cr;Au,yes,,approved,"User request 2026-11-16: 'For metallic patterns, we have Au/Cr, Pt/Ti, Au/Pd/Cr, thickness of each layer varies'",Deposited Cr first
+Pt/Ti,metal,Ti/Pt,Ti;Pt,yes,,approved,User request 2026-11-16,Deposited Ti first
+Au/Pd/Cr,metal,Cr/Pd/Au,Cr;Pd;Au,yes,,approved,User request 2026-11-16,Deposited Cr first
+Ti/Au,metal,Ti/Au,Ti;Au,yes,,pending,"Fab Manual (Sihong), Graphene Devices - New: 'Deposition: Ti/Au: 5nm/70nm' (bond pads) and '2a. Metallic top gate ... Ti/Au: 5nm/30nm'",Seeded from the Fab Manual; approve in Rules editor
+Ti/PdAu,metal,Ti/PdAu,Ti;PdAu,yes,,pending,"Fab Manual (Sihong), Graphene Devices - New: '1a. Metallic bottom gate ... Deposition: Ti/PdAu'",Thicknesses not given in the manual
+SiO2_285_doped_Si,substrate,285 nm SiO2 / doped Si,Si (doped);SiO2,yes,285,approved,User request 2026-11-16: '285nm SiO2/doped Si substrate',Doped Si can act as a global back gate
+SiO2_285_resistive_Si,substrate,285 nm SiO2 / resistive Si,Si (resistive);SiO2,no,285,approved,User request 2026-11-16: '285nm SiO2/resistive Si substrates',Not usable as a gate

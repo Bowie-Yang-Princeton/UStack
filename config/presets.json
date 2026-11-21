@@ -1,0 +1,347 @@
+{
+  "description": "Design presets: the relations Configure uses to generate dimensions (program choices, status 'program', until the lab edits them) and the microscope field of view. Edit in UStack › Presets.",
+  "presets": {
+    "hall_bar.width_per_arm": {
+      "value": 3.0,
+      "unit": "×",
+      "group": "Hall bar",
+      "label": "Channel width W / arm width",
+      "description": "W = this × arm width (arm width = electrode width target). Narrow probes next to a wide channel barely short the Hall voltage.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "hall_bar.pitch_per_width": {
+      "value": 2.0,
+      "unit": "×",
+      "group": "Hall bar",
+      "label": "Probe pitch / channel width",
+      "description": "Probe pitch = max(this × W, arm width + spacing, arm width + arm-spacing minimum); L = (pairs − 1) × pitch.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "hall_bar.n_probe_pairs": {
+      "value": 2,
+      "unit": "",
+      "group": "Hall bar",
+      "label": "Voltage-probe pairs",
+      "description": "2 is the minimum for a four-probe Rxx and an Rxy.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "hall_bar.arm_length_per_width_no_gate": {
+      "value": 1.0,
+      "unit": "×",
+      "group": "Hall bar",
+      "label": "Arm length / W (no gate to clear)",
+      "description": "Without a gate to clear: arm length = max(this × W, contact overlap + spacing).",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "hall_bar.sd_extension_per_width_no_gate": {
+      "value": 1.0,
+      "unit": "×",
+      "group": "Hall bar",
+      "label": "S/D extension / W (no gate to clear)",
+      "description": "Without a gate to clear: source/drain extension beyond the outer probes = this × W.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "gates.margin_spacings": {
+      "value": 1.0,
+      "unit": "× spacing",
+      "group": "Gates and flakes",
+      "label": "Gate margin",
+      "description": "Gate margin g = max(stacking shift, this × electrode spacing): how far a graphite gate is designed beyond the channel.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "gates.bg_extra_spacings": {
+      "value": 1.0,
+      "unit": "× spacing",
+      "group": "Gates and flakes",
+      "label": "Extra BG size under a TG",
+      "description": "A bottom gate under a top gate is this × spacing larger on every side.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "hbn.margin_spacings": {
+      "value": 1.0,
+      "unit": "× spacing",
+      "group": "Gates and flakes",
+      "label": "hBN margin",
+      "description": "Every hBN = the largest conducting flake + this × spacing on every side.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "hbn.top_margin_spacings": {
+      "value": 2.0,
+      "unit": "× spacing",
+      "group": "Gates and flakes",
+      "label": "Top hBN margin",
+      "description": "The top (cap) hBN = the largest conducting flake + this × spacing on every side.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "prepattern.tmd_overlap_spacings": {
+      "value": 2.0,
+      "unit": "× spacing",
+      "group": "Pre-patterned contacts",
+      "label": "Device over each electrode tip",
+      "description": "Two-column pre-patterned electrodes (Mak): the device layer reaches this × spacing onto each electrode beyond the gap.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "tg.length_extra_spacings": {
+      "value": 1.0,
+      "unit": "× spacing",
+      "group": "Stage 2 gates",
+      "label": "Metal TG beyond the outer probes",
+      "description": "Metal top-gate length = L + arm width + 2 × this × spacing.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "tg.overhang_spacings": {
+      "value": 1.0,
+      "unit": "× spacing",
+      "group": "Stage 2 gates",
+      "label": "Metal TG overhang",
+      "description": "How far the metal top gate's lead reaches past the graphene edge.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "cg.reach_spacings": {
+      "value": 1.0,
+      "unit": "× spacing",
+      "group": "Stage 2 gates",
+      "label": "Contact-gate reaches",
+      "description": "Contact gate: inner reach, outer reach and side extension, each this × spacing.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "sg.gap_spacings": {
+      "value": 1.0,
+      "unit": "× spacing",
+      "group": "Stage 2 gates",
+      "label": "Split-gate gap",
+      "description": "Split gate: gap to the top-gate edge.",
+      "status": "program",
+      "source": "UStack program default"
+    },
+    "fingers.width_um": {
+      "value": 0.8,
+      "unit": "µm",
+      "group": "Finger array",
+      "label": "Finger width",
+      "status": "approved",
+      "source": "stated by the user on 2026-11-17",
+      "description": "Width of every pre-patterned finger (straight part)."
+    },
+    "fingers.pitch_um": {
+      "value": 2.2,
+      "unit": "µm",
+      "group": "Finger array",
+      "label": "Finger pitch (centre to centre)",
+      "status": "approved",
+      "source": "stated by the user on 2026-11-17",
+      "description": "Fingers are 2.2 µm apart, centre to centre (the lab's drawings: 2.2–2.3 µm pitch, 1.4–1.5 µm edge spacing)."
+    },
+    "fingers.column_gap_um": {
+      "value": 4.0,
+      "unit": "µm",
+      "group": "Finger array",
+      "label": "Gap between the two columns",
+      "status": "approved",
+      "source": "stated by the user on 2026-11-17",
+      "description": "Tip-to-tip distance between the two facing finger columns."
+    },
+    "fingers.min_overlap_um": {
+      "value": 0.8,
+      "unit": "µm",
+      "group": "Finger array",
+      "label": "Finger tip on the twisted region",
+      "status": "program",
+      "source": "UStack program default",
+      "description": "A finger pair counts when the channel between its tips and this much of each finger from its tip lie on the twisted region (program choice: one finger width)."
+    },
+    "fingers.bbn_margin_um": {
+      "value": 3.0,
+      "unit": "µm",
+      "group": "Finger array",
+      "label": "Finger ends inside the bottom hBN by",
+      "status": "approved",
+      "source": "Edited in UStack by user on 2026-11-17",
+      "description": "Each column's fingers run from the tip until they are this far inside the bottom hBN boundary (as long as possible: less need on the covering hBN). Without a located bottom hBN the fixed finger length is used."
+    },
+    "fingers.straight_um": {
+      "value": 9.5,
+      "unit": "µm",
+      "group": "Finger array",
+      "label": "Straight part from the tip",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs (Stack 1/3/4), docs/wse2_design_report.md",
+      "description": "Fingers run straight this far from the tip, then fan out (lab drawings: 5.5–12 µm, median 9.5)."
+    },
+    "fingers.length_um": {
+      "value": 21.8,
+      "unit": "µm",
+      "group": "Finger array",
+      "label": "Finger length (tip to far end)",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs (Stack 1/3/4), docs/wse2_design_report.md",
+      "description": "Extent of a finger along its axis (lab drawings: 14.4–30.6 µm, median 21.8). Used only when the bottom hBN is not located: otherwise each column is as long as the bottom hBN allows."
+    },
+    "fingers.far_pitch_um": {
+      "value": 3.8,
+      "unit": "µm",
+      "group": "Finger array",
+      "label": "Pitch at the far ends",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs (Stack 1/3/4), docs/wse2_design_report.md",
+      "description": "Centre-to-centre pitch at the fanned-out ends (lab drawings: 2.9–4.6 µm, median 3.8)."
+    },
+    "fingers.far_width_um": {
+      "value": 1.1,
+      "unit": "µm",
+      "group": "Finger array",
+      "label": "Width beyond the bend",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs (Stack 1/3/4), docs/wse2_design_report.md",
+      "description": "Finger width on the fanned part (lab drawings: 0.78–1.24 µm, median 1.1)."
+    },
+    "cg.tooth_length_um": {
+      "value": 6.1,
+      "unit": "µm",
+      "group": "Finger array: contact gate",
+      "label": "Contact-gate tooth length",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs (Stack 1/3/4), docs/wse2_design_report.md",
+      "description": "Each contact-gate tooth covers its finger from the tip outward this far (lab drawings: 5.3–11.1 µm, median 6.1)."
+    },
+    "cg.bus_tmd_gap_um": {
+      "value": 0.5,
+      "unit": "µm",
+      "group": "Finger array: contact gate",
+      "label": "Contact-gate bus from the TMD by",
+      "status": "approved",
+      "source": "Edited in UStack by user on 2026-11-18",
+      "description": "The bus joining the contact-gate teeth (and its lead) stays this far from the TMD (device layers, e.g. both WSe2 halves); each column's teeth are as short as that allows, so the two columns may differ."
+    },
+    "cg.hbn_margin_um": {
+      "value": 0.5,
+      "unit": "µm",
+      "group": "Finger array: contact gate",
+      "label": "Contact gate inside its hBN by",
+      "status": "approved",
+      "source": "Edited in UStack by user on 2026-11-18",
+      "description": "The whole contact gate (teeth, bus and its lead) stays this far inside the hBN it is written on (the middle hBN): off it, it would touch the fingers. The bus lead is shortened to stay inside."
+    },
+    "cg.bus_width_um": {
+      "value": 1.6,
+      "unit": "µm",
+      "group": "Finger array: contact gate",
+      "label": "Contact-gate bus width",
+      "status": "program",
+      "source": "UStack program default",
+      "description": "Width of the bar joining the teeth behind them (program choice: the electrode width)."
+    },
+    "cg.bus_extension_um": {
+      "value": 5.0,
+      "unit": "µm",
+      "group": "Finger array: contact gate",
+      "label": "Bus beyond the last tooth",
+      "status": "program",
+      "source": "UStack program default",
+      "description": "The bus bar runs this far beyond the outer tooth, where an electrode lands on it (program choice)."
+    },
+    "electrodes.width_um": {
+      "value": 1.6,
+      "unit": "µm",
+      "group": "Finger array: electrodes",
+      "label": "Electrode width",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs (Stack 1/3/4), docs/wse2_design_report.md",
+      "description": "Width of the EBL electrodes from the fingers to the bond pads (lab drawings: 1.57–1.7 µm, median 1.64)."
+    },
+    "electrodes.land_from_tip_um": {
+      "value": 14.2,
+      "unit": "µm",
+      "group": "Finger array: electrodes",
+      "label": "Electrode lands at (from the tip)",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs (Stack 1/3/4), docs/wse2_design_report.md",
+      "description": "Where an electrode starts on its finger, measured from the finger tip (lab drawings: 13.1–15.3 µm, median 14.2)."
+    },
+    "electrodes.bg_contact_um": {
+      "value": 3.5,
+      "unit": "µm",
+      "group": "Finger array: electrodes",
+      "label": "Back-gate contact bar",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs (Stack 1/3/4), docs/wse2_design_report.md",
+      "description": "Size of the bar that contacts the back gate at each end of the gap strip (lab drawings: ≈3.5 µm)."
+    },
+    "electrodes.gate_contact_clearance_um": {
+      "value": 3.0,
+      "unit": "µm",
+      "group": "Finger array: electrodes",
+      "label": "Gate contact clearance",
+      "status": "program",
+      "source": "UStack program default",
+      "description": "A gate contact stays this far from the twisted region and the fingers (program choice)."
+    },
+    "electrodes.cg_overlap_um": {
+      "value": 3.7,
+      "unit": "µm",
+      "group": "Finger array: electrodes",
+      "label": "Electrode overlap on the contact-gate bus",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs: layer-7 electrode on the layer-6 contact gate, Stack 1 2.95 / 4.52 / 7.48 µm, Stack 3 1.57 µm (median 3.7)",
+      "description": "Each contact-gate electrode runs this far back along its bus lead from the lead's end (inside the lead), for a good contact (user, 2026-11-20: overlap the bus more)."
+    },
+    "electrodes.finger_overlap_um": {
+      "value": 10.9,
+      "unit": "µm",
+      "group": "Finger array: electrodes",
+      "label": "Electrode overlap on a finger (at most)",
+      "status": "pending",
+      "source": "measured in the lab's tWSe2-1 GDS designs: layer-7 electrode along a layer-5 finger, median 12.17 µm (Stack 1) / 9.69 µm (Stack 3), docs/wse2_design_report.md (median 10.9)",
+      "description": "A Hall-bar electrode runs at most this far along its finger, back from the finger's far end (user, 2026-11-20: overlap a bit, not so far that the gold lands on the top hBN). It starts later where the flakes above the fingers need it (electrodes.flake_clearance_um)."
+    },
+    "electrodes.flake_clearance_um": {
+      "value": 1.0,
+      "unit": "µm",
+      "group": "Finger array: electrodes",
+      "label": "Electrode clearance from the flakes above the fingers",
+      "status": "approved",
+      "source": "Edited in UStack by user on 2026-11-20",
+      "description": "Where a Hall-bar electrode lands on its finger, its metal stays this far outside every flake above the fingers on the chip when the electrodes are written (top hBN, middle hBN, the device layers, a graphite top gate — for a conducting flake at least ebl.contact_to_graphite_gate_min_um)."
+    },
+    "electrodes.pad_landing_um": {
+      "value": 5.0,
+      "unit": "µm",
+      "group": "Finger array: electrodes",
+      "label": "Landing square on the bond-pad lead",
+      "status": "approved",
+      "source": "Edited in UStack by user on 2026-11-20",
+      "description": "Side of the square each electrode ends in, centred on the end of its bond-pad lead (half of it over the lead), for a good contact. Larger than the lead's width overlaps it on three sides; it must leave the spacing to the neighbouring leads' squares."
+    },
+    "microscope.fov_100x_width_um": {
+      "value": 143.28,
+      "unit": "µm",
+      "group": "Microscope",
+      "label": "100x image width",
+      "status": "approved",
+      "source": "stated by the user on 2026-11-16",
+      "description": "Field of view of a 100x image (the whole image, any resolution). Other objectives scale as 100 / magnification."
+    },
+    "microscope.fov_100x_height_um": {
+      "value": 95.13,
+      "unit": "µm",
+      "group": "Microscope",
+      "label": "100x image height",
+      "status": "approved",
+      "source": "stated by the user on 2026-11-16",
+      "description": "Field of view of a 100x image (height)."
+    }
+  }
+}

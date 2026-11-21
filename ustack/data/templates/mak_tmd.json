@@ -1,0 +1,195 @@
+{
+  "schema": "ustack.device/1",
+  "id": "mak_tmd",
+  "name": "TMD Hall bar · Mak / Xia structure",
+  "family": "mak_tmd",
+  "template_id": "mak_tmd",
+  "description": "Kin Fai Mak / Jie Shan (Cornell), Yiyu Xia's devices. Ti/Pt electrodes are pre-patterned on the chip as two columns of parallel fingers with a long thin gap between the columns. The whole stack (cap, TG, thin hBN, WSe2, bottom hBN, graphite BG) is released with the BG in the gap, never touching the Pt. The WSe2 is wider than the bottom hBN, so it reaches past the hBN edge onto the finger tips of both columns and stays gated in between. Source and drain are the end fingers of the two columns (Hall bar › S/D 'Bent to the sides'; W is the gap between the columns). Contact gates and split gates are written on top; the top gate is smaller than the bottom gate and defines the channel. Layout as described by the lab on 2026-11-16.",
+  "created": "2026-11-16T00:00:00",
+  "modified": "2026-11-16T00:00:00",
+  "layers_order": "bottom_to_top",
+  "layers": [
+    {
+      "uid": "S0",
+      "name": "Substrate",
+      "function": "substrate",
+      "thickness_nm": {
+        "value": 285.0,
+        "source": "material"
+      },
+      "pieces": 1,
+      "notes": "Choose 285 nm SiO2 on doped Si (usable as a global back gate) or on resistive Si.",
+      "material": ""
+    },
+    {
+      "uid": "PT",
+      "name": "Ti/Pt electrodes (two columns)",
+      "material": "Pt/Ti",
+      "function": "hall_bar_contacts",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Ti",
+          "thickness_nm": {
+            "value": null,
+            "source": "",
+            "suggested": 5.0,
+            "suggested_source": "Y. Xia et al., arXiv:2508.02662 (2025), Methods"
+          }
+        },
+        {
+          "metal": "Pt",
+          "thickness_nm": {
+            "value": null,
+            "source": "",
+            "suggested": 25.0,
+            "suggested_source": "Y. Xia et al., arXiv:2508.02662 (2025), Methods"
+          }
+        }
+      ],
+      "role": "prepattern_contacts",
+      "notes": "Two columns of fingers on the bare chip; the BG lands in the gap between them and never touches them.",
+      "literature": "Pre-patterned Ti/Pt (5 nm/25 nm) electrodes (Xia 2025b)."
+    },
+    {
+      "uid": "BG",
+      "name": "Graphite bottom gate (in the gap)",
+      "material": "graphite",
+      "function": "bottom_gate",
+      "pieces": 1,
+      "notes": "Few-layer graphite; narrower than the electrode gap."
+    },
+    {
+      "uid": "BBN",
+      "name": "Bottom hBN",
+      "material": "hBN",
+      "function": "bottom_gate_dielectric",
+      "thickness_nm": {
+        "value": null,
+        "source": "",
+        "suggested": 12.0,
+        "suggested_source": "Y. Xia et al., arXiv:2508.02662 (2025), Methods"
+      },
+      "pieces": 1,
+      "role": "bottom_hbn",
+      "notes": "Covers the BG; narrower than the WSe2 so the WSe2 reaches past it onto the electrodes."
+    },
+    {
+      "uid": "TMD1",
+      "name": "WSe2 (half 1)",
+      "material": "WSe2",
+      "function": "device_layer",
+      "layer_count": {
+        "value": null,
+        "source": "",
+        "suggested": 1,
+        "suggested_source": "monolayer"
+      },
+      "pieces": 2,
+      "role": "tmd",
+      "notes": "Large monolayer cut in half with an AFM tip; wider than the bottom hBN and the electrode gap."
+    },
+    {
+      "uid": "TMD2",
+      "name": "WSe2 (half 2, twisted)",
+      "material": "WSe2",
+      "function": "device_layer",
+      "layer_count": {
+        "value": null,
+        "source": "",
+        "suggested": 1,
+        "suggested_source": "monolayer"
+      },
+      "pieces": 1,
+      "role": "tmd"
+    },
+    {
+      "uid": "TBN",
+      "name": "Top hBN (top-gate dielectric)",
+      "material": "hBN",
+      "function": "top_gate_dielectric",
+      "thickness_nm": {
+        "value": null,
+        "source": "",
+        "suggested": 3.4,
+        "suggested_source": "Y. Xia et al., arXiv:2508.02662 (2025), Methods"
+      },
+      "pieces": 1,
+      "role": "tg_hbn"
+    },
+    {
+      "uid": "TG",
+      "name": "Graphite top gate (smaller than BG)",
+      "material": "graphite",
+      "function": "top_gate",
+      "pieces": 1,
+      "notes": "Smaller than the bottom gate; the TG ∩ BG overlap is the channel (Xia 2024/2025)."
+    },
+    {
+      "uid": "CAP",
+      "name": "hBN cap",
+      "material": "hBN",
+      "function": "encapsulation",
+      "pieces": 1,
+      "role": "top_hbn",
+      "notes": "Thicker cap; thickness not stated."
+    },
+    {
+      "uid": "CG",
+      "name": "Contact gates",
+      "function": "contact_gate",
+      "pieces": 1,
+      "notes": "Heavily dope the TMD between the channel and the Pt electrodes.",
+      "literature": "Ti/Pd 5/35 nm (Xia 2025b; 5/40 nm in Xia 2024). Ti/Pd is not in config/materials.csv: choose a lab metal or add it.",
+      "material": ""
+    },
+    {
+      "uid": "SG",
+      "name": "Split gates",
+      "function": "split_gate",
+      "pieces": 1,
+      "notes": "Deplete the TMD regions gated only by the BG.",
+      "literature": "Ti/Pd 5/35 nm (Xia 2025b; 5/40 nm in Xia 2024). Ti/Pd is not in config/materials.csv: choose a lab metal or add it.",
+      "material": ""
+    }
+  ],
+  "pattern": "hall_bar",
+  "hall_bar": {
+    "channel_width_um": null,
+    "channel_length_um": {
+      "value": null,
+      "source": "",
+      "suggested": 1.6,
+      "suggested_source": "Y. Xia et al., arXiv:2508.02662 (2025), Methods: L ≈ 1.6 µm (centre-to-centre probe distance)"
+    },
+    "n_probe_pairs": null,
+    "arm_width_um": null,
+    "arm_length_um": null,
+    "sd_extension_um": null,
+    "sd_style": "bent"
+  },
+  "contact_scheme": "prepatterned_bottom",
+  "pattern_params": {},
+  "gate_limits_V": {},
+  "requirements": [],
+  "references": [
+    {
+      "cite": "Y. Xia et al., Nature 637, 833 (2025), arXiv:2405.14784, Methods",
+      "url": "https://arxiv.org/abs/2405.14784"
+    },
+    {
+      "cite": "Y. Xia et al., arXiv:2508.02662 (2025), Methods",
+      "url": "https://arxiv.org/abs/2508.02662"
+    }
+  ],
+  "process": [
+    "EBL + evaporation of the Ti/Pt electrodes on the chip: two columns of fingers with a thin gap between them for the BG.   [UStack Stage 2: prepattern contacts]",
+    "Exfoliate hBN, graphite and monolayer WSe2; cut the WSe2 in half with an AFM tip.",
+    "PC on PDMS picks up, in order: hBN cap, TG graphite, thin hBN, half 1, half 2 (twisted), bottom hBN, BG graphite.",
+    "Release at 200 °C (Xia 2024; 180 °C for MoTe2, Kang 2025) with the BG in the gap between the electrode columns; the WSe2 reaches past the bottom hBN onto the finger tips.",
+    "EBL + evaporation of the contact gates and split gates.   [UStack Stage 2: contact gates + split gates]"
+  ],
+  "stage2": {},
+  "history": [],
+  "validation": {}
+}

@@ -1,0 +1,149 @@
+{
+  "schema": "ustack.layers/1",
+  "note": "GDS layer/datatype per pattern purpose. 'missing' entries are asked for at export time; nothing is guessed.",
+  "layers": {
+    "align_marks": {
+      "layer": 3,
+      "datatype": 0,
+      "name": "AlignMarkers",
+      "status": "pending",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - Nov 2025, Board Etch / 1D contacts",
+        "quote": "Layer 3/0: AlignMarkers"
+      }
+    },
+    "board_etch": {
+      "layer": 7,
+      "datatype": 0,
+      "name": "BoardEtchPos",
+      "status": "pending",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - Nov 2025, Board Etch",
+        "quote": "Layer 7/0: BoardEtchPos"
+      }
+    },
+    "contacts": {
+      "layer": 8,
+      "datatype": 0,
+      "name": "Contacts",
+      "status": "pending",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - Nov 2025, 1D contacts",
+        "quote": "Layer 8/0: Contacts"
+      }
+    },
+    "hallbar_etch": {
+      "layer": null,
+      "datatype": null,
+      "name": "HallBarEtchPos",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    },
+    "etch_windows": {
+      "layer": null,
+      "datatype": null,
+      "name": "EtchCheckWindows",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    },
+    "top_gate": {
+      "layer": null,
+      "datatype": null,
+      "name": "TopGate",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    },
+    "bottom_gate": {
+      "layer": null,
+      "datatype": null,
+      "name": "BottomGate",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    },
+    "prepattern_contacts": {
+      "layer": null,
+      "datatype": null,
+      "name": "PrepatternContacts",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    },
+    "contact_gates": {
+      "layer": null,
+      "datatype": null,
+      "name": "ContactGates",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    },
+    "split_gates": {
+      "layer": null,
+      "datatype": null,
+      "name": "SplitGates",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    },
+    "ref_flakes": {
+      "layer": null,
+      "datatype": null,
+      "name": "RefFlakeOutlines",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      },
+      "reference_only": true
+    },
+    "ref_defects": {
+      "layer": null,
+      "datatype": null,
+      "name": "RefDefects",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      },
+      "reference_only": true
+    },
+    "electrodes": {
+      "layer": null,
+      "datatype": null,
+      "name": "Electrodes",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    },
+    "bg_contacts": {
+      "layer": null,
+      "datatype": null,
+      "name": "BackGateContacts",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    },
+    "tg_contacts": {
+      "layer": null,
+      "datatype": null,
+      "name": "TopGateContact",
+      "status": "missing",
+      "source": {
+        "doc": "not in the attached documents"
+      }
+    }
+  }
+}

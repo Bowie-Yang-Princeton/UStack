@@ -1,0 +1,145 @@
+{
+  "schema": "ustack.device/1",
+  "id": "ju_rhombohedral",
+  "name": "Rhombohedral graphene Hall bar · Long Ju structure",
+  "family": "ju_rhombohedral",
+  "template_id": "ju_rhombohedral",
+  "description": "Long Ju (MIT) structure: a rhombohedral multilayer graphene domain (found by near-field IR / Raman and cut out by AFM or femtosecond laser) is picked up with the top hBN, graphite TG and hBN cap on PPC and landed on a prepared bottom stack (hBN + graphite BG); EBL + RIE into a Hall bar, Cr/Au contacts.",
+  "created": "2026-11-16T00:00:00",
+  "modified": "2026-11-16T00:00:00",
+  "layers_order": "bottom_to_top",
+  "layers": [
+    {
+      "uid": "S0",
+      "name": "Substrate",
+      "function": "substrate",
+      "thickness_nm": {
+        "value": 285.0,
+        "source": "material"
+      },
+      "pieces": 1,
+      "notes": "Choose 285 nm SiO2 on doped Si (usable as a global back gate) or on resistive Si.",
+      "material": ""
+    },
+    {
+      "uid": "BG",
+      "name": "Graphite bottom gate",
+      "material": "graphite",
+      "function": "bottom_gate",
+      "pieces": 1
+    },
+    {
+      "uid": "BBN",
+      "name": "Bottom hBN",
+      "material": "hBN",
+      "function": "bottom_gate_dielectric",
+      "pieces": 1,
+      "role": "bottom_hbn",
+      "notes": "Straight edges misaligned to the graphene unless a moiré is wanted (Han 2024).",
+      "literature": "T. Han et al., arXiv:2305.03151 (pentalayer rhombohedral graphene), Methods"
+    },
+    {
+      "uid": "RG",
+      "name": "Rhombohedral multilayer graphene",
+      "material": "graphene",
+      "function": "device_layer",
+      "layer_count": {
+        "value": null,
+        "source": "",
+        "suggested": 5,
+        "suggested_source": "pentalayer (Lu 2024, Han 2024)"
+      },
+      "pieces": 1,
+      "stacking": "rhombohedral",
+      "role": "graphene",
+      "literature": "Rhombohedral domains identified by IR camera / near-field IR / Raman; isolated by AFM or fs-laser cutting (Han 2024, 2025)."
+    },
+    {
+      "uid": "TBN",
+      "name": "Top hBN (top-gate dielectric)",
+      "material": "hBN",
+      "function": "top_gate_dielectric",
+      "twist_deg": {
+        "value": null,
+        "source": "",
+        "suggested": 0.77,
+        "suggested_source": "Z. Lu et al., Nature 626, 759 (2024), arXiv:2309.17436: moiré with the top hBN, ~0.77°"
+      },
+      "pieces": 1,
+      "role": "tg_hbn",
+      "notes": "Aligned to the graphene only for a moiré device (Lu 2024: ~0.77°, period ~11.5 nm); otherwise misaligned."
+    },
+    {
+      "uid": "TG",
+      "name": "Graphite top gate",
+      "material": "graphite",
+      "function": "top_gate",
+      "pieces": 1,
+      "literature": "Han 2025: top hBN / graphite / middle hBN / ... ; Han 2024 used a NiCr top layer."
+    },
+    {
+      "uid": "CAP",
+      "name": "hBN cap",
+      "material": "hBN",
+      "function": "encapsulation",
+      "pieces": 1,
+      "role": "top_hbn"
+    },
+    {
+      "uid": "CT",
+      "name": "Cr/Au contacts",
+      "material": "Au/Cr",
+      "function": "hall_bar_contacts",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Cr",
+          "thickness_nm": null
+        },
+        {
+          "metal": "Au",
+          "thickness_nm": null
+        }
+      ],
+      "literature": "'Cr–Au for electrical connections' (Han 2025); thickness not stated."
+    }
+  ],
+  "pattern": "hall_bar",
+  "hall_bar": {
+    "channel_width_um": null,
+    "channel_length_um": null,
+    "n_probe_pairs": null,
+    "arm_width_um": null,
+    "arm_length_um": null,
+    "sd_extension_um": null,
+    "sd_style": "auto"
+  },
+  "contact_scheme": "edge_1d",
+  "pattern_params": {},
+  "gate_limits_V": {},
+  "requirements": [],
+  "references": [
+    {
+      "cite": "Z. Lu et al., Nature 626, 759 (2024), arXiv:2309.17436",
+      "url": "https://arxiv.org/abs/2309.17436"
+    },
+    {
+      "cite": "T. Han et al., arXiv:2305.03151 (pentalayer rhombohedral graphene), Methods",
+      "url": "https://arxiv.org/abs/2305.03151"
+    },
+    {
+      "cite": "T. Han et al., arXiv:2408.15233 (chiral superconductivity, rhombohedral graphene), Methods",
+      "url": "https://arxiv.org/abs/2408.15233"
+    }
+  ],
+  "process": [
+    "Exfoliate multilayer graphene; identify rhombohedral domains (IR camera, near-field IR, Raman).",
+    "Isolate the rhombohedral domain by AFM or femtosecond-laser cutting.",
+    "PPC film picks up the hBN cap, graphite TG, top hBN and the graphene; land on the prepared bottom stack (hBN + graphite BG).",
+    "EBL + RIE into a Hall bar.   [UStack Stage 2: Hall-bar etch]",
+    "Cr/Au contacts to source, drain, probes and gates.   [UStack Stage 2: contacts]"
+  ],
+  "stage2": {},
+  "history": [],
+  "validation": {}
+}

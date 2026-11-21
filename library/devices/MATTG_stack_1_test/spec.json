@@ -1,0 +1,332 @@
+{
+  "schema": "ustack.device/1",
+  "id": "ef74db870a36",
+  "name": "MATTG stack 1 test",
+  "family": "xia_graphene",
+  "template_id": "xia_graphene",
+  "description": "Liqiao Xia (MIT) structure, as used in the lab's DRC notes: a graphite bottom gate under hBN, the graphene (monolayer here; twisted / helical stacks add pieces) under a top hBN, a metal top gate, and 1D edge contacts. Board etch, Hall-bar (device) etch and contacts are separate EBL steps.",
+  "created": "2026-11-16T15:59:09",
+  "modified": "2026-11-16T16:33:01",
+  "layers_order": "bottom_to_top",
+  "layers": [
+    {
+      "uid": "S0",
+      "name": "Substrate",
+      "material": "SiO2_285_resistive_Si",
+      "function": "substrate",
+      "thickness_nm": {
+        "value": 285.0,
+        "source": "material"
+      },
+      "pieces": 1,
+      "notes": "Choose 285 nm SiO2 on doped Si (usable as a global back gate) or on resistive Si."
+    },
+    {
+      "uid": "BG",
+      "name": "Gold bottom gate",
+      "material": "Ti/PdAu",
+      "function": "bottom_gate",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Ti",
+          "thickness_nm": {
+            "value": 1.0,
+            "source": "user"
+          }
+        },
+        {
+          "metal": "PdAu",
+          "thickness_nm": {
+            "value": 9.0,
+            "source": "user"
+          }
+        }
+      ],
+      "notes": "'few-layer graphene strip' in the paper. Lab DRC: sticks out of the bottom BN on one side for its contact.",
+      "literature": "BG stack (hBN + graphite) by PC, released on 285 nm SiO2/Si, 350 °C 12 h vacuum anneal, AFM contact-mode clean (L.-Q. Xia)."
+    },
+    {
+      "uid": "BBN",
+      "name": "Bottom hBN",
+      "material": "hBN",
+      "function": "bottom_gate_dielectric",
+      "thickness_nm": {
+        "value": 15.0,
+        "source": "user"
+      },
+      "width_um": {
+        "value": 20.0,
+        "source": "user"
+      },
+      "length_um": {
+        "value": 30.0,
+        "source": "user"
+      },
+      "pieces": 1,
+      "role": "bottom_hbn",
+      "notes": "Lab DRC: larger than the BG in three directions."
+    },
+    {
+      "uid": "GR",
+      "name": "Gr1",
+      "material": "graphene",
+      "function": "device_layer",
+      "layer_count": {
+        "value": 1.0,
+        "source": "user",
+        "suggested": 1,
+        "suggested_source": "monolayer (Hall-bar example)"
+      },
+      "width_um": {
+        "value": 15.0,
+        "source": "user"
+      },
+      "length_um": {
+        "value": 25.0,
+        "source": "user"
+      },
+      "twist_deg": {
+        "value": 0.0,
+        "source": "user"
+      },
+      "pieces": 3,
+      "role": "graphene",
+      "literature": "Helical trilayer: one monolayer laser-cut into three, each rotated 1.8° at pick-up (room temperature)."
+    },
+    {
+      "uid": "Lf83614",
+      "name": "Gr2",
+      "material": "graphene",
+      "function": "device_layer",
+      "layer_count": {
+        "value": 1.0,
+        "source": "user",
+        "suggested": 1,
+        "suggested_source": "monolayer (Hall-bar example)"
+      },
+      "width_um": {
+        "value": 15.0,
+        "source": "user"
+      },
+      "length_um": {
+        "value": 25.0,
+        "source": "user"
+      },
+      "twist_deg": {
+        "value": 1.22,
+        "source": "user"
+      },
+      "pieces": 2,
+      "role": "graphene",
+      "literature": "Helical trilayer: one monolayer laser-cut into three, each rotated 1.8° at pick-up (room temperature)."
+    },
+    {
+      "uid": "L1d955b",
+      "name": "Gr3",
+      "material": "graphene",
+      "function": "device_layer",
+      "layer_count": {
+        "value": 1.0,
+        "source": "user",
+        "suggested": 1,
+        "suggested_source": "monolayer (Hall-bar example)"
+      },
+      "width_um": {
+        "value": 15.0,
+        "source": "user"
+      },
+      "length_um": {
+        "value": 25.0,
+        "source": "user"
+      },
+      "twist_deg": {
+        "value": -2.44,
+        "source": "user"
+      },
+      "pieces": 1,
+      "role": "graphene",
+      "literature": "Helical trilayer: one monolayer laser-cut into three, each rotated 1.8° at pick-up (room temperature)."
+    },
+    {
+      "uid": "TBN",
+      "name": "Top hBN",
+      "material": "hBN",
+      "function": "top_gate_dielectric",
+      "thickness_nm": {
+        "value": 15.0,
+        "source": "user"
+      },
+      "width_um": {
+        "value": 20.0,
+        "source": "user"
+      },
+      "length_um": {
+        "value": 30.0,
+        "source": "user"
+      },
+      "pieces": 1,
+      "role": "tg_hbn",
+      "notes": "Lab DRC: covers the good graphene regions (graphene may tear at the top-BN edge)."
+    },
+    {
+      "uid": "TG",
+      "name": "Metal top gate",
+      "material": "Ti/Au",
+      "function": "top_gate",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Ti",
+          "thickness_nm": {
+            "value": 5.0,
+            "source": "user",
+            "suggested": 5.0,
+            "suggested_source": "Fab Manual (Sihong), Graphene Devices - New / Nov 2025 (pending)"
+          }
+        },
+        {
+          "metal": "Au",
+          "thickness_nm": {
+            "value": 30.0,
+            "source": "user",
+            "suggested": 30.0,
+            "suggested_source": "Fab Manual (Sihong), Graphene Devices - New / Nov 2025 (pending)"
+          }
+        }
+      ],
+      "notes": "Delete this layer for a device without a top gate.",
+      "literature": "Paper: 25-65 nm Au on a 2-5 nm Cr or Ti adhesion layer (thermal evaporation). Lab default Ti/Au 5/30 nm (Fab Manual, pending)."
+    },
+    {
+      "uid": "CT",
+      "name": "1D edge contacts",
+      "material": "Au/Cr",
+      "function": "hall_bar_contacts",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Cr",
+          "thickness_nm": {
+            "value": 5.0,
+            "source": "user",
+            "suggested": 5.0,
+            "suggested_source": "Fab Manual (Sihong), Graphene Devices - New / Nov 2025 (pending)"
+          }
+        },
+        {
+          "metal": "Au",
+          "thickness_nm": {
+            "value": 60.0,
+            "source": "user",
+            "suggested": 60.0,
+            "suggested_source": "Fab Manual (Sihong), Graphene Devices - New / Nov 2025 (pending)"
+          }
+        }
+      ],
+      "notes": "Also used for source / drain.",
+      "literature": "Paper: 63-75 nm Au on 2-5 nm Cr. Lab: Cr/Au 5/~60 nm, thicker than BN/Gr/BN."
+    }
+  ],
+  "pattern": "hall_bar",
+  "hall_bar": {
+    "channel_width_um": {
+      "value": 3.0,
+      "source": "user"
+    },
+    "channel_length_um": {
+      "value": 12.0,
+      "source": "user"
+    },
+    "n_probe_pairs": {
+      "value": 8.0,
+      "source": "user"
+    },
+    "arm_width_um": {
+      "value": 1.0,
+      "source": "user"
+    },
+    "arm_length_um": {
+      "value": 5.0,
+      "source": "user"
+    },
+    "sd_extension_um": {
+      "value": 3.0,
+      "source": "user"
+    }
+  },
+  "contact_scheme": "edge_1d",
+  "pattern_params": {
+    "tg_length_um": null,
+    "tg_overhang_um": null,
+    "cg_inner_um": null,
+    "cg_outer_um": null,
+    "cg_side_um": null,
+    "sg_gap_um": null
+  },
+  "gate_limits_V": {
+    "BG": null,
+    "TG": null
+  },
+  "requirements": [],
+  "references": [
+    {
+      "cite": "L.-Q. Xia et al., arXiv:2310.12204 (helical trilayer graphene), Methods A",
+      "url": "https://arxiv.org/abs/2310.12204"
+    },
+    {
+      "cite": "Design - Autocad DRC.docx (Liqiao)",
+      "url": ""
+    },
+    {
+      "cite": "Fab Manual (Sihong), Graphene Devices - New / Nov 2025",
+      "url": ""
+    }
+  ],
+  "process": [
+    "Bottom stack: PC picks up an hBN flake and a few-layer graphite strip; release on 285 nm SiO2/Si; 350 °C 12 h vacuum anneal; AFM contact-mode clean.",
+    "Top stack: a second PC stamp picks up the top hBN and the graphene piece(s) at room temperature (rotate between pieces for twisted stacks).",
+    "Release onto the bottom stack at 150-170 °C; find a bubble-free region by AFM.",
+    "Board etch (BN-Test, 5-10 nm more than top + bottom BN), with top-BN-only check windows.   [UStack Stage 2: board etch]",
+    "Metal top gate (Ti/Au or Cr/Au).   [UStack Stage 2: gate]",
+    "Hall-bar (device) etch: arms ≥ 1.5 µm beyond the BG for 1D contacts.   [UStack Stage 2: Hall-bar etch]",
+    "1D contacts: etch top BN, graphene 7-10 s, 5-10 nm of bottom BN; Cr/Au 5/~60 nm.   [UStack Stage 2: contacts]"
+  ],
+  "stage2": {},
+  "history": [
+    {
+      "time": "2026-11-16T15:59:09",
+      "note": "Created from template 'xia_graphene'"
+    },
+    {
+      "time": "2026-11-16T16:33:01",
+      "note": "Saved"
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "summary": "Valid · 0 errors · 0 missing · 2 warnings",
+    "issues": [
+      {
+        "severity": "warning",
+        "code": "material_pending",
+        "message": "Gold bottom gate: material 'Ti/PdAu' is pending approval (Fab Manual (Sihong), Graphene Devices - New: '1a. Metallic bottom gate ... Deposition: Ti/PdAu').",
+        "layer": "BG",
+        "field": "material"
+      },
+      {
+        "severity": "warning",
+        "code": "material_pending",
+        "message": "Metal top gate: material 'Ti/Au' is pending approval (Fab Manual (Sihong), Graphene Devices - New: 'Deposition: Ti/Au: 5nm/70nm' (bond pads) and '2a. Metallic top gate ... Ti/Au: 5nm/30nm').",
+        "layer": "TG",
+        "field": "material"
+      },
+      {
+        "severity": "info",
+        "code": "lateral_separation",
+        "message": "Metal top gate and 1D edge contacts are adjacent conductors: they must not overlap laterally (checked on the traced outlines in Stage 2).",
+        "layer": "CT"
+      }
+    ]
+  }
+}

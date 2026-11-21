@@ -1,0 +1,216 @@
+{
+  "schema": "ustack.device/1",
+  "id": "xu_tmd",
+  "name": "TMD Hall bar · Xu structure",
+  "family": "xu_tmd",
+  "template_id": "xu_tmd",
+  "description": "Xiaodong Xu (UW) structure: the bottom gate (graphite + hBN) is stacked first, Pt Hall-bar contacts are written on it, the TMD is dropped onto the Pt together with a thin hBN that carries the contact gates, and an hBN/graphite/hBN top gate is transferred last.",
+  "created": "2026-11-16T00:00:00",
+  "modified": "2026-11-16T00:00:00",
+  "layers_order": "bottom_to_top",
+  "layers": [
+    {
+      "uid": "S0",
+      "name": "Substrate",
+      "function": "substrate",
+      "thickness_nm": {
+        "value": 285.0,
+        "source": "material"
+      },
+      "pieces": 1,
+      "notes": "Choose 285 nm SiO2 on doped Si (usable as a global back gate) or on resistive Si.",
+      "material": ""
+    },
+    {
+      "uid": "BG",
+      "name": "Graphite bottom gate",
+      "material": "graphite",
+      "function": "bottom_gate",
+      "pieces": 1,
+      "notes": "Few-layer graphite; thickness not stated in the papers."
+    },
+    {
+      "uid": "BBN",
+      "name": "Bottom hBN",
+      "material": "hBN",
+      "function": "bottom_gate_dielectric",
+      "pieces": 1,
+      "role": "bottom_hbn",
+      "notes": "Lab rule: larger than the middle hBN and the TMD (the Pt contacts are written on it)."
+    },
+    {
+      "uid": "PT",
+      "name": "Pt Hall-bar contacts",
+      "material": "Pt/Ti",
+      "function": "hall_bar_contacts",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Ti",
+          "thickness_nm": null
+        },
+        {
+          "metal": "Pt",
+          "thickness_nm": {
+            "value": null,
+            "source": "",
+            "suggested": 8.0,
+            "suggested_source": "H. Park et al., arXiv:2406.09591 (2024), Methods"
+          }
+        }
+      ],
+      "role": "prepattern_contacts",
+      "notes": "Lab metal list has Ti/Pt; set the Ti thickness (0 if none).",
+      "literature": "Pt 8 nm by e-beam evaporation on the BG stack, no adhesion layer stated; contact-mode AFM clean, Pt RMS < 300 pm (Park 2024)."
+    },
+    {
+      "uid": "TMD1",
+      "name": "WSe2 (half 1)",
+      "material": "WSe2",
+      "function": "device_layer",
+      "layer_count": {
+        "value": null,
+        "source": "",
+        "suggested": 1,
+        "suggested_source": "monolayer, tear/cut-and-stack"
+      },
+      "pieces": 2,
+      "role": "tmd",
+      "notes": "One monolayer cut in half with an AFM tip; this is the first half.",
+      "literature": "Xu group: MoTe2 monolayer cut with an AFM tip in an Ar glovebox (Park 2023/2024)."
+    },
+    {
+      "uid": "TMD2",
+      "name": "WSe2 (half 2, twisted)",
+      "material": "WSe2",
+      "function": "device_layer",
+      "layer_count": {
+        "value": null,
+        "source": "",
+        "suggested": 1,
+        "suggested_source": "monolayer"
+      },
+      "pieces": 1,
+      "role": "tmd",
+      "notes": "Second half, rotated by the twist angle."
+    },
+    {
+      "uid": "MBN",
+      "name": "Middle hBN (thin, contact-gate dielectric)",
+      "material": "hBN",
+      "function": "contact_gate_dielectric",
+      "pieces": 1,
+      "role": "middle_hbn",
+      "notes": "Lab rule: thin; edge ≥ 1 µm beyond every TMD edge so the contact gates sit on hBN.",
+      "literature": "'a thin BN as the contact gate dielectric' (Park 2024); thickness not stated."
+    },
+    {
+      "uid": "CG",
+      "name": "Pt contact gates",
+      "material": "Pt/Ti",
+      "function": "contact_gate",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Ti",
+          "thickness_nm": null
+        },
+        {
+          "metal": "Pt",
+          "thickness_nm": {
+            "value": null,
+            "source": "",
+            "suggested": 8.0,
+            "suggested_source": "H. Park et al., arXiv:2406.09591 (2024), Methods"
+          }
+        }
+      ],
+      "literature": "Pt (8 nm) contact gates by EBL + evaporation (Park 2024)."
+    },
+    {
+      "uid": "LEADS",
+      "name": "Cr/Au leads",
+      "material": "Au/Cr",
+      "function": "leads",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Cr",
+          "thickness_nm": {
+            "value": null,
+            "source": "",
+            "suggested": 5.0,
+            "suggested_source": "H. Park et al., arXiv:2406.09591 (2024), Methods"
+          }
+        },
+        {
+          "metal": "Au",
+          "thickness_nm": {
+            "value": null,
+            "source": "",
+            "suggested": 70.0,
+            "suggested_source": "H. Park et al., arXiv:2406.09591 (2024), Methods"
+          }
+        }
+      ],
+      "literature": "'Cr/Au (5/70 nm) connecting electrodes' (Park 2024)."
+    },
+    {
+      "uid": "TBN",
+      "name": "hBN (top-gate dielectric)",
+      "material": "hBN",
+      "function": "top_gate_dielectric",
+      "pieces": 1,
+      "role": "tg_hbn"
+    },
+    {
+      "uid": "TG",
+      "name": "Graphite top gate",
+      "material": "graphite",
+      "function": "top_gate",
+      "pieces": 1
+    },
+    {
+      "uid": "CAP",
+      "name": "Top-most hBN",
+      "material": "hBN",
+      "function": "encapsulation",
+      "pieces": 1,
+      "role": "top_hbn"
+    }
+  ],
+  "pattern": "hall_bar",
+  "hall_bar": {
+    "channel_width_um": null,
+    "channel_length_um": null,
+    "n_probe_pairs": null,
+    "arm_width_um": null,
+    "arm_length_um": null,
+    "sd_extension_um": null,
+    "sd_style": "auto"
+  },
+  "contact_scheme": "prepatterned_bottom",
+  "pattern_params": {},
+  "gate_limits_V": {},
+  "requirements": [],
+  "references": [
+    {
+      "cite": "H. Park et al., arXiv:2406.09591 (2024), Methods",
+      "url": "https://arxiv.org/abs/2406.09591"
+    },
+    {
+      "cite": "H. Park et al., Nature 622, 74 (2023), arXiv:2308.02657, Methods",
+      "url": "https://arxiv.org/abs/2308.02657"
+    }
+  ],
+  "process": [
+    "PC dry transfer: pick up the bottom hBN, then the graphite bottom gate; release onto the Si chip.",
+    "EBL + e-beam evaporation of the Pt Hall-bar contacts on the BG stack; contact-mode AFM cleaning (Pt RMS < 300 pm).   [UStack Stage 2: prepattern contacts]",
+    "Cut the TMD monolayer with an AFM tip (MoTe2: Ar glovebox, O2/H2O < 0.1 ppm). Pick up the thin hBN, half 1, rotate, half 2; release onto the BG stack and Pt.",
+    "Wash, AFM-clean; EBL + evaporation of the Pt contact gates and the Cr/Au connecting electrodes; AFM-clean again.   [UStack Stage 2: contact gates + leads]",
+    "Transfer the hBN/graphite/hBN top gate."
+  ],
+  "stage2": {},
+  "history": [],
+  "validation": {}
+}

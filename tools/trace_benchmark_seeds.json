@@ -1,0 +1,213 @@
+{
+ "about": "Clicks (image px) on the target flake of each lab image in 'WSe2 device training/Layer OM Image', chosen by eye; mode/prefer = how the flake is traced (monolayer WSe2: this colour only, faintest first). Used by tools/trace_benchmark.py and tests/test_tracing.py.",
+ "images": [
+  {
+   "file": "Stack 1/Stack 1 Bottom hBN.png",
+   "seeds": [
+    [
+     807,
+     517
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 1/Stack 1 Middle hBN.png",
+   "seeds": [
+    [
+     791,
+     416
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 1/Stack 1 Top hBN.png",
+   "seeds": [
+    [
+     1057,
+     476
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 1/Stack 1 graphite back gate.png",
+   "seeds": [
+    [
+     706,
+     480
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 1/Stack 1 graphite top gate.png",
+   "seeds": [
+    [
+     872,
+     597
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 1/WSe2 Stack 1 cutted.png",
+   "seeds": [
+    [
+     613,
+     678
+    ],
+    [
+     896,
+     597
+    ]
+   ],
+   "mode": "colour",
+   "prefer": "faint"
+  },
+  {
+   "file": "Stack 3/Stack 3 Bottom hBN black field.png",
+   "seeds": [
+    [
+     1428,
+     1271
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any",
+   "min_iou": 0.8,
+   "note": "dark-field image; part of the edge is a soft brightness gradient, so clicks agree less"
+  },
+  {
+   "file": "Stack 3/Stack 3 Middle hBN.png",
+   "seeds": [
+    [
+     912,
+     638
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 3/Stack 3 Top hBN.png",
+   "seeds": [
+    [
+     735,
+     638
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 3/Stack 3 graphite back gate.png",
+   "seeds": [
+    [
+     1049,
+     517
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 3/Stack 3 graphite top gate.png",
+   "seeds": [
+    [
+     912,
+     470
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 3/WSe2 Stack 3 uncutted.png",
+   "seeds": [
+    [
+     936,
+     638
+    ]
+   ],
+   "mode": "colour",
+   "prefer": "faint"
+  },
+  {
+   "file": "Stack 4/Stack 4 Bottom hBN black field.png",
+   "seeds": [
+    [
+     1857,
+     1271
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 4/Stack 4 Middle hBN.png",
+   "seeds": [
+    [
+     710,
+     597
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 4/Stack 4 Top hBN.png",
+   "seeds": [
+    [
+     856,
+     718
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 4/Stack 4 graphite back gate.png",
+   "seeds": [
+    [
+     807,
+     517
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 4/Stack 4 graphite top gate.png",
+   "seeds": [
+    [
+     912,
+     597
+    ]
+   ],
+   "mode": "flake",
+   "prefer": "any"
+  },
+  {
+   "file": "Stack 4/WSe2 Stack 3 uncutted but naturally split.png",
+   "seeds": [
+    [
+     540,
+     675
+    ],
+    [
+     1230,
+     780
+    ]
+   ],
+   "mode": "colour",
+   "prefer": "faint"
+  }
+ ]
+}

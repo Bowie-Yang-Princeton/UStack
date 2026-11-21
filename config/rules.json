@@ -1,0 +1,641 @@
+{
+  "schema": "ustack.rules/1",
+  "status_legend": {
+    "approved": "Stated by the lab (user request) or approved in the Rules editor. Enforced at its severity.",
+    "pending": "Copied from an attached lab document, waiting for approval. Checked, but every finding notes that the rule is pending.",
+    "literature": "Taken from a published Methods section for a group template. Checked like 'pending' until the lab approves it.",
+    "missing": "No value supplied yet. The app asks for it the first time a check needs it; it is never guessed."
+  },
+  "rules": {
+    "ebl.electrode_width_target_um": {
+      "value": 0.8,
+      "unit": "um",
+      "kind": "min",
+      "severity": "warning",
+      "status": "approved",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Design target: every electrode / lead at least this wide. Below it (but above the hard minimum) is a warning.",
+      "source": {
+        "doc": "User request 2026-11-16",
+        "quote": "at least 0.8um wide for each electrodes",
+        "approved": "Approved in UStack by user on 2026-11-16"
+      }
+    },
+    "ebl.electrode_spacing_target_um": {
+      "value": 0.8,
+      "unit": "um",
+      "kind": "min",
+      "severity": "warning",
+      "status": "approved",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Design target: spacing between Hall-bar arms and between electrodes.",
+      "source": {
+        "doc": "User request 2026-11-16",
+        "quote": "try to keep at least 0.8um spacing bettern hall bars"
+      }
+    },
+    "ebl.contact_width_min_um": {
+      "value": 0.5,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "approved",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Hard minimum electrode width (liftoff, optical visibility).",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Draw Contacts / Design DRC (Liqiao)",
+        "quote": "Contact width > 0.5 um",
+        "approved": "Approved in UStack by user on 2026-11-16"
+      }
+    },
+    "ebl.contact_spacing_min_um": {
+      "value": 0.4,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "pending",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Hard minimum gap between neighbouring contacts / leads.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Draw Contacts",
+        "quote": "Keep 0.4 um between contacts."
+      }
+    },
+    "ebl.arm_spacing_min_um": {
+      "value": 0.3,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "pending",
+      "applies_to": [
+        "graphene"
+      ],
+      "description": "Minimum distance between graphene contact arms (device etch).",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Draw Device etch neg",
+        "quote": "Distance between graphene contact arms > 0.3 um."
+      }
+    },
+    "ebl.corner_radius_min_um": {
+      "value": 0.05,
+      "unit": "um",
+      "kind": "min",
+      "severity": "warning",
+      "status": "pending",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Round etch-mask corners at least this much (PMMA cracks / backscattering).",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Draw Device etch neg",
+        "quote": "Round corners (radius > 0.05 um) to avoid PMMA cracks."
+      }
+    },
+    "ebl.contact_to_graphite_gate_min_um": {
+      "value": 0.7,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "pending",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "Minimum distance from a 1D contact to a graphite BG / TG.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Design DRC (Liqiao)",
+        "quote": "Contact - BG distance > 0.7 um (same for distance from graphite TG/BG)"
+      }
+    },
+    "ebl.device_etch_beyond_bg_um": {
+      "value": 1.5,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "pending",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "For 1D edge contacts the etched Hall-bar arms extend this far beyond the back gate.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Draw Device etch neg",
+        "quote": "Extend ~1.5 um beyond BG for 1D contacts (otherwise 1D contacts will short BG to graphene)"
+      }
+    },
+    "ebl.metal_tg_width_min_um": {
+      "value": 0.4,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "pending",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Minimum width of a metal top gate.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Design DRC (Liqiao)",
+        "quote": "Metal TG > 0.4 um wide"
+      }
+    },
+    "ebl.defect_clearance_um": {
+      "value": 0.5,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "approved",
+      "applies_to": [
+        "all"
+      ],
+      "description": "How far the channel and arms must stay from marked defects (wrinkles, thick steps, bubbles).",
+      "source": {
+        "doc": "User request 2026-11-16",
+        "quote": "avoid defect regions (wrinkle, thick step, bubbles)",
+        "approved": "Entered in UStack by user on 2026-11-20"
+      }
+    },
+    "ebl.contact_overlap_um": {
+      "value": 1.0,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "approved",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "How far a 1D-contact electrode overlaps the end of its etched arm.",
+      "source": {
+        "doc": "Entered in UStack by user on 2026-11-16",
+        "quote": ""
+      }
+    },
+    "ebl.alignment_region_um": {
+      "value": 800,
+      "unit": "um",
+      "kind": "info",
+      "severity": "info",
+      "status": "pending",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Size of the alignment region around a device.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Comments",
+        "quote": "800x800 um alignment region is good for all practical reasons."
+      }
+    },
+    "ebl.etch_mask_overhang_um": {
+      "value": null,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "missing",
+      "applies_to": [
+        "all"
+      ],
+      "description": "How far an etch mask (Hall-bar etch, board etch) reaches beyond the flake edge it must clear.",
+      "source": {
+        "doc": "not in the attached documents",
+        "quote": ""
+      }
+    },
+    "ebl.board_etch_keep_margin_um": {
+      "value": null,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "missing",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "Margin of the region kept by the board etch around the graphene device layer (the kept area must be larger than the graphene).",
+      "source": {
+        "doc": "User request 2026-11-16",
+        "quote": "the board etch of graphene device should preserve an area that's larger than graphene device layer area (margin not given)"
+      }
+    },
+    "ebl.etch_window_size_um": {
+      "value": null,
+      "unit": "um",
+      "kind": "min",
+      "severity": "warning",
+      "status": "missing",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "Side of the square top-BN-only windows used to check the board / contact etch.",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Board Etch",
+        "quote": "Protect two windows for a top-BN-only region. (size not given)"
+      }
+    },
+    "stack.substrate_breakdown_field_MV_per_cm": {
+      "value": null,
+      "unit": "MV/cm",
+      "kind": "max",
+      "severity": "error",
+      "status": "missing",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Breakdown field of the substrate SiO2, used with the planned maximum Si back-gate voltage.",
+      "source": {
+        "doc": "User request 2026-11-16",
+        "quote": "dielectric breakdown strength for substrate"
+      }
+    },
+    "stack.hbn_breakdown_field_MV_per_cm": {
+      "value": null,
+      "unit": "MV/cm",
+      "kind": "max",
+      "severity": "warning",
+      "status": "missing",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Optional: hBN breakdown field, used with each gate's planned maximum voltage. Not asked for unless a gate has a maximum voltage.",
+      "source": {
+        "doc": "not in the attached documents",
+        "quote": ""
+      },
+      "optional": true
+    },
+    "stack.board_etch_keep_contains_device": {
+      "value": true,
+      "kind": "bool",
+      "severity": "error",
+      "status": "approved",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "The region kept by the board etch must contain the whole device (graphene) layer and be larger than it.",
+      "source": {
+        "doc": "User request 2026-11-16",
+        "quote": "the board etch of graphene device should preserve an area that's larger than graphene device layer area"
+      }
+    },
+    "stack.alignment_shift_um": {
+      "value": 2.0,
+      "unit": "um",
+      "kind": "max",
+      "severity": "error",
+      "status": "approved",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Lateral misalignment to allow between flakes during stacking (transfer). The flake list adds it on every side of each flake's design size.",
+      "source": {
+        "doc": "Entered in UStack by user on 2026-11-16",
+        "quote": ""
+      }
+    },
+    "xu.middle_hbn_edge_margin_um": {
+      "value": 1.0,
+      "unit": "um",
+      "kind": "min",
+      "severity": "error",
+      "status": "approved",
+      "applies_to": [
+        "xu_tmd"
+      ],
+      "description": "The thin middle hBN (contact-gate dielectric) must extend at least this far beyond every TMD edge, so contact gates sit on hBN and never touch the TMD.",
+      "source": {
+        "doc": "User request 2026-11-16",
+        "quote": "middle BN edge should be at least 1um away from the WSe2 edges to allow contact gates"
+      }
+    },
+    "xu.bottom_hbn_larger": {
+      "value": true,
+      "kind": "bool",
+      "severity": "error",
+      "status": "approved",
+      "applies_to": [
+        "xu_tmd"
+      ],
+      "description": "Bottom hBN larger than the middle hBN and the TMD.",
+      "source": {
+        "doc": "User request 2026-11-16",
+        "quote": "requires a larger bottom BN"
+      }
+    },
+    "xu.middle_hbn_max_thickness_nm": {
+      "value": 15.0,
+      "unit": "nm",
+      "kind": "max",
+      "severity": "error",
+      "status": "approved",
+      "applies_to": [
+        "xu_tmd"
+      ],
+      "description": "Upper limit for the 'thin' middle hBN (contact-gate dielectric).",
+      "source": {
+        "doc": "User request 2026-11-16",
+        "quote": "thin middle BN (no number given)",
+        "approved": "Entered in UStack by user on 2026-11-16"
+      }
+    },
+    "gr.bottom_bn_larger_than_bg_three_sides": {
+      "value": true,
+      "kind": "bool",
+      "severity": "warning",
+      "status": "pending",
+      "applies_to": [
+        "graphene"
+      ],
+      "description": "Bottom BN larger than the back gate on three sides; the BG sticks out on the fourth for its contact.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Flake DRC",
+        "quote": "Bottom BN should be larger than the back gate in 3 directions and the BG should stick out on the 4th direction"
+      }
+    },
+    "gr.graphene_bg_overlap_needs_bottom_bn": {
+      "value": true,
+      "kind": "bool",
+      "severity": "error",
+      "status": "pending",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "Wherever graphene overlaps the BG there must be bottom BN.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "More DRC",
+        "quote": "Any overlap between graphene and BG requires bottom BN there."
+      }
+    },
+    "gr.graphene_tg_overlap_needs_top_bn": {
+      "value": true,
+      "kind": "bool",
+      "severity": "error",
+      "status": "pending",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "Wherever graphene overlaps the TG there must be top BN.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "More DRC",
+        "quote": "Any overlap between graphene and TG requires top BN there."
+      }
+    },
+    "gr.tg_extends_beyond_graphene": {
+      "value": true,
+      "kind": "bool",
+      "severity": "warning",
+      "status": "pending",
+      "applies_to": [
+        "graphene"
+      ],
+      "description": "A metal TG crosses the whole channel and extends outside the graphene.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Draw Top gates",
+        "quote": "TGs should extend outside graphene to avoid shorting of TG to graphene by the TG contact arm"
+      }
+    },
+    "gr.contacts_outside_bg_for_1d": {
+      "value": true,
+      "kind": "bool",
+      "severity": "error",
+      "status": "pending",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "1D contacts are placed outside the back gate.",
+      "source": {
+        "doc": "Design - Autocad DRC.docx",
+        "section": "Draw Contacts",
+        "quote": "1D contacts should be outside BG."
+      }
+    },
+    "gr.contact_metal_thicker_than_stack": {
+      "value": true,
+      "kind": "bool",
+      "severity": "error",
+      "status": "pending",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "The 1D-contact metal is thicker than the etched BN/graphene/BN step it climbs.",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - New, Contacts",
+        "quote": "Cr/Au: 5nm/~60nm (thicker than BN/Gr/BN)"
+      }
+    },
+    "gr.board_etch_windows": {
+      "value": true,
+      "kind": "bool",
+      "severity": "warning",
+      "status": "pending",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "The board etch includes top-BN-only windows to check the etch.",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - Nov 2025, Board Etch",
+        "quote": "Protect two windows for a top-BN-only region."
+      }
+    },
+    "mak.tg_smaller_than_bg": {
+      "value": true,
+      "kind": "bool",
+      "severity": "warning",
+      "status": "literature",
+      "applies_to": [
+        "mak_tmd"
+      ],
+      "description": "The top gate is smaller than the bottom gate and defines the channel; split gates deplete the BG-only regions.",
+      "source": {
+        "doc": "Y. Xia et al., Nature 637, 833 (2025), arXiv:2405.14784, Methods",
+        "quote": "The top gate is smaller in area and defines the device channel"
+      }
+    },
+    "etch.bn_rate_nm_per_s": {
+      "value": 0.15,
+      "unit": "nm/s",
+      "kind": "info",
+      "severity": "info",
+      "status": "pending",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Oxford RIE recipe 'BN - Test' etch rate (rises with time; see Fab Manual).",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "MNFC Fab General Workflow",
+        "quote": "Recipe “BN – Test”, rate: ~1.5 nm / 10 s."
+      }
+    },
+    "etch.graphene_rate_nm_per_s": {
+      "value": 2.0,
+      "unit": "nm/s",
+      "kind": "info",
+      "severity": "info",
+      "status": "pending",
+      "applies_to": [
+        "all"
+      ],
+      "description": "Oxford RIE recipe 'Graphene test - O2 - 2nm/s'.",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "MNFC Fab General Workflow",
+        "quote": "rate: ~2 nm / 1 s."
+      }
+    },
+    "etch.board_overetch_nm": {
+      "value": [
+        5,
+        10
+      ],
+      "unit": "nm",
+      "kind": "range",
+      "severity": "info",
+      "status": "pending",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "Board etch: etch this much more than top BN + bottom BN.",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - Nov 2025, Board Etch",
+        "quote": "Usually etch 5-10 nm more than the total thickness of top BN and bottom BN."
+      }
+    },
+    "etch.contact_bottom_bn_nm": {
+      "value": [
+        5,
+        10
+      ],
+      "unit": "nm",
+      "kind": "range",
+      "severity": "info",
+      "status": "pending",
+      "applies_to": [
+        "graphene",
+        "rhombohedral"
+      ],
+      "description": "1D contacts: after top BN and graphene, etch this much of the bottom BN.",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - Nov 2025, 1D contacts",
+        "quote": "Recipe “BN – Test”, etch 5-10 nm bottom BN."
+      }
+    }
+  },
+  "defaults": {
+    "metal.contacts_1d": {
+      "material": "Au/Cr",
+      "thickness_nm": {
+        "Cr": 5,
+        "Au": 60
+      },
+      "status": "pending",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - Nov 2025, 1D contacts",
+        "quote": "Cr (pocket 5) ... 5nm; Au (pocket 6) ... ~60nm"
+      }
+    },
+    "metal.bond_pads": {
+      "material": "Ti/Au",
+      "thickness_nm": {
+        "Ti": 5,
+        "Au": 70
+      },
+      "status": "pending",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - New, step 1",
+        "quote": "Deposition: Ti/Au: 5nm/70nm"
+      }
+    },
+    "metal.top_gate": {
+      "material": "Ti/Au",
+      "thickness_nm": {
+        "Ti": 5,
+        "Au": 30
+      },
+      "status": "pending",
+      "source": {
+        "doc": "Fab Manual (Sihong)",
+        "section": "Graphene Devices - New, 2a. Metallic top gate",
+        "quote": "Deposition: Ti/Au: 5nm/30nm"
+      }
+    },
+    "microscope.um_per_px": {
+      "value": {
+        "5x": null,
+        "50x": null,
+        "100x": null
+      },
+      "status": "missing",
+      "description": "Image scale per objective for the stacking / inspection camera. Stage 2 calibrates the 100x scale from the alignment markers; Stage 1 flake images need this (or a scale entered per image).",
+      "source": {
+        "doc": "not in the attached documents",
+        "quote": ""
+      }
+    },
+    "design.thickness_nm": {
+      "value": {
+        "graphite:bottom_gate": 3.0,
+        "hBN:bottom_gate_dielectric": 15.0,
+        "hBN:top_gate_dielectric": 15.0,
+        "graphite:top_gate": 3.0,
+        "hBN:encapsulation": 10.0,
+        "hBN:contact_gate_dielectric": 10.0
+      },
+      "status": "approved",
+      "description": "Lab design thickness (nm) for a 2D layer, per 'material:function' (e.g. 'hBN:top_gate_dielectric'). Used by Configure for layers whose thickness is empty. Asked for the first time it is needed.",
+      "source": {
+        "doc": "Entered in UStack on 2026-11-16"
+      }
+    },
+    "design.metal_nm": {
+      "value": {
+        "Pt/Ti:hall_bar_contacts:Ti": 5.0,
+        "Pt/Ti:hall_bar_contacts:Pt": 25.0,
+        "Pt/Ti:contact_gate:Ti": 5.0,
+        "Pt/Ti:contact_gate:Pt": 30.0,
+        "Pt/Ti:split_gate:Ti": 5.0,
+        "Pt/Ti:split_gate:Pt": 30.0,
+        "Au/Cr:leads:Cr": 5.0,
+        "Au/Cr:leads:Au": 70.0
+      },
+      "status": "approved",
+      "description": "Lab design thickness (nm) of each metal in a deposited stack, per 'material:function:metal' (e.g. 'Ti/PdAu:bottom_gate:Ti'). Used by Configure when no Fab Manual default matches. Asked for the first time it is needed.",
+      "source": {
+        "doc": "Entered in UStack on 2026-11-16"
+      }
+    }
+  }
+}

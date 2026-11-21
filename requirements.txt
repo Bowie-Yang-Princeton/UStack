@@ -1,0 +1,6 @@
+# UStack — Python 3.10+
+PyQt6>=6.5
+numpy>=1.24
+opencv-python-headless>=4.8   # headless: no second copy of Qt next to PyQt6
+klayout>=0.28                 # the klayout Python package (geometry, DRC, GDS)
+pytest>=7                     # tests only
