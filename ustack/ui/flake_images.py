@@ -24,11 +24,20 @@ from ..validation import category
 from .canvas import Canvas, image_transform
 from .style import (Card, CheckBox, ComboBox, Dialog, QtCore, QtGui, QtWidgets, button, clear_layout, label, scroll,
                     tool_strip_button)
-from .widgets import CheckDelegate, NumberField, PickTree, coord_label, buttons_row, clickable_rows, modernize, open_file, row
+from .widgets import (CheckDelegate, NumberField, PickTree, coord_label, buttons_row, clickable_rows, help_button, modernize,
+                      open_file, row)
 
 Qt = QtCore.Qt
 STATUS_TEXT = {"auto": "auto-traced", "click": "traced", "drawn": "drawn", "edited": "edited"}
 HAND_MADE = ("click", "drawn", "edited", "chip")      # chip: taken from the flake found on the chip (Stage 2)
+REF_ANGLE_HELP = (
+    "The direction of this flake's crystal lattice, measured from the long side of the uploaded image (degrees, "
+    "counter-clockwise as the image is shown; 0 = the lattice runs along the long side). Measure it for example by AFM "
+    "(lattice-resolved image) or from straight cleaved edges.\n\n"
+    "UStack uses it to plan the relative rotation between layers: each device layer is turned so its lattice lies at "
+    "its twist (Stack tab › Twist) to the device layer below; any other flake given a twist (e.g. an hBN for a "
+    "graphene–hBN moiré) is turned to that angle from the nearest device layer. Flake layout, the Structure tab and the "
+    "auto design show the layers turned that way.\n\nLeave it at 0 if you have not measured it.")
 
 
 def is_flake(config, layer) -> bool:
@@ -192,14 +201,20 @@ class FlakeImagesPanel(QtWidgets.QWidget):
                 body.addLayout(buttons_row(button("Clear border", lambda: self.clear(layer.uid))))
             scale = NumberField(img.get("um_per_px"), "µm/px", 88, 6)
             scale.valueEdited.connect(lambda v: self._image_param(layer.uid, "um_per_px", v))
-            body.addLayout(row("Scale", scale, label("µm / px", "muted"), width=70))
+            body.addLayout(row("Scale", scale, label("µm / px", "muted"), width=124))
             rot = NumberField(img.get("angle_deg", 0.0), "0", 88)
             rot.valueEdited.connect(lambda v: self._image_param(layer.uid, "angle_deg", v or 0.0))
-            body.addLayout(row("Rotation", rot, label("°", "muted"), width=70))
+            body.addLayout(row("Rotation", rot, label("°", "muted"), width=124))
+            ref = NumberField(img.get("ref_angle_deg", 0.0), "0", 88)
+            ref.setToolTip("Lattice direction measured from the image's long side (°, counter-clockwise)")
+            ref.valueEdited.connect(lambda v: self._image_param(layer.uid, "ref_angle_deg", v or 0.0))
+            self.ref_field = ref
+            self.ref_help = help_button("Reference angle", REF_ANGLE_HELP)
+            body.addLayout(row("Reference angle", ref, label("°", "muted"), self.ref_help, width=124))
             flip = CheckBox("Mirror (image taken from the other side)")
             flip.setChecked(img.get("mirror", False))
             flip.toggled.connect(lambda v: self._image_param(layer.uid, "mirror", bool(v)))
-            body.addLayout(row("", flip, width=70))
+            body.addLayout(row("", flip, width=124))
         modernize(self.details)
 
     # ------------------------------------------------------------------ check boxes / visibility

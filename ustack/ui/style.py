@@ -511,6 +511,7 @@ _SVG = {
     "chevronRight": "<path d='M8 5l5 5-5 5'/>",
     "chevronUp": "<path d='M5 12l5-5 5 5'/>",
     "info": "<circle cx='10' cy='10' r='7.25'/><path d='M10 9v5'/><circle cx='10' cy='6.4' r='0.9' fill='{c}' stroke='none'/>",
+    "help": "<circle cx='10' cy='10' r='7.25'/><path d='M7.9 7.9a2.15 2.15 0 1 1 3.1 1.95c-.6.3-1 .8-1 1.45v.6'/><circle cx='10' cy='13.9' r='0.9' fill='{c}' stroke='none'/>",
     "sidebarLeft": "<rect x='3' y='4' width='14' height='12' rx='1.8'/><path d='M7.5 4v12'/>",
     "sidebarRight": "<rect x='3' y='4' width='14' height='12' rx='1.8'/><path d='M12.5 4v12'/>",
     "sidebarBottom": "<rect x='3' y='4' width='14' height='12' rx='1.8'/><path d='M3 11.5h14'/>",

@@ -1187,10 +1187,9 @@ def test_outline_window_moves_and_zooms_like_the_ebl_canvas(cfg):
     w.dirty = False
 
 
-def test_contact_gate_leaves_source_and_drain_and_stays_on_its_hbn(cfg):
-    """No S/D in the stack: the outer finger of each column, at opposite ends, is left ungated; the bus
-    lies within the teeth (the comb covers the fingers only under them) and leads away from the S/D
-    finger, shortened to stay on the middle hBN; the reversed layout when the first does not fit."""
+def test_contact_gate_gates_every_finger_and_stays_on_its_hbn(cfg):
+    """Every finger is gated, the source / drain ones too (user, 2026-11-22); the bus lies behind the teeth and its lead,
+    shortened to stay on the middle hBN, leads out past the outer tooth; the reversed layout when the first does not fit."""
     apply_answers(cfg, {"preset:electrodes.pad_landing_um": 10.0, "preset:electrodes.flake_clearance_um": 1.0})              # TEST VALUE (no dialog in a test)
     spec, flow = _flow_spec()
     bp = bondpads.default_preset()
@@ -1211,8 +1210,8 @@ def test_contact_gate_leaves_source_and_drain_and_stays_on_its_hbn(cfg):
     apply_answers(cfg, {"preset:cg.bus_tmd_gap_um": 0.5})                      # TEST VALUE
     ef.generate(spec, flow, "contact_gate", cfg, bp)
     lay = st.comb
-    # layout 1 (top S/D left, bus to +u) needs 5 µm past the top-right tooth: only 2.5 fit → shortened
-    assert lay["skip"] == {"top": "first", "bottom": "last"} and lay["dirs"] == {"top": 1.0, "bottom": -1.0}
+    # layout 1 (top bus to +u) needs 5 µm past the top-right tooth: only 2.5 fit → shortened; no finger left ungated
+    assert not lay["skip"] and lay["n_skip"] == 0 and lay["dirs"] == {"top": 1.0, "bottom": -1.0}
     assert lay["extension"]["top"] == pytest.approx(2.5, abs=0.11) and lay["extension"]["bottom"] == pytest.approx(5.0)
     # the bottom bus (to −u) is led on, slightly turned, to the hBN's far corner (−u, −v), 0.5 µm inside it (user, 2026-11-20)
     ru, rv = arr.to_local([lay["reach"]["bottom"]])[0]
@@ -1220,19 +1219,21 @@ def test_contact_gate_leaves_source_and_drain_and_stays_on_its_hbn(cfg):
     assert cfg.value("ebl.contact_width_min_um") - 1e-9 <= w <= p.cg_bus_width + 1e-9
     assert ru == pytest.approx(-hs - 30 + 0.5 + w / 2, abs=0.1) and rv == pytest.approx(-25 + 0.5 + w / 2, abs=0.1)
     rows = {r["rule"]: r for r in ef.rule_report(spec, flow, "contact_gate", cfg)}
-    assert rows["Contact gate off the ungated (source / drain) fingers"]["status"] == "met"
-    assert rows["Source and drain fingers left ungated"]["status"] == "met"
+    assert rows["Every finger gated (source / drain too)"]["status"] == "met"
+    assert "Source and drain fingers left ungated" not in rows
+    if "Contact gate on the bottom hBN" in rows:                      # never over bare back gate (user, 2026-11-22)
+        assert rows["Contact gate on the bottom hBN"]["status"] == "met"
     assert rows[f"Contact gate on {mbn.label}"]["status"] == "met"
     assert rows["Contact-gate bus off the TMD"]["status"] == "met"
     fingers = {(f.column, f.index): geo.region(f.polygon) for f in arr.fingers()}
     cg = geo.regions(st.shapes["contact_gates"]).merged()
-    assert (cg & fingers[("top", 0)]).is_empty() and (cg & fingers[("bottom", arr.n - 1)]).is_empty()
-    assert not (cg & fingers[("top", 1)]).is_empty()
+    assert all(not (cg & fingers[k]).is_empty() for k in fingers)          # the outer (source / drain) fingers too
+    assert fg.gated_fingers(arr, st.shapes["contact_gates"]) == {"top": set(range(arr.n)), "bottom": set(range(arr.n))}
     # only 1 µm of hBN past the top-right tooth (plenty beside the bottom column): the reversed layout
-    # (top S/D on the right, its bus to −u; bottom S/D on the left, its bus to +u)
+    # (top bus to −u, bottom bus to +u)
     st.outlines[mbn.uid] = [arr.to_chip([(-hs - 30, -25), (hs + 30, -25), (hs + 30, 0), (hs + 1.0, 0), (hs + 1.0, 25), (-hs - 30, 25)])]
     ef.generate(spec, flow, "contact_gate", cfg, bp)
-    assert st.comb["skip"] == {"top": "last", "bottom": "first"} and any("reversed" in n for n in st.notes)
+    assert st.comb["dirs"] == {"top": -1.0, "bottom": 1.0} and any("reversed" in n for n in st.notes)
     # no room on either side: an error, nothing shrunk
     st.outlines[mbn.uid] = [arr.to_chip([(-hs - 0.5, -25), (hs + 0.5, -25), (hs + 0.5, 25), (-hs - 0.5, 25)])]
     with pytest.raises(ValueError):
@@ -1327,10 +1328,9 @@ def test_check_window_and_reopening_shows_the_canvas_as_saved(cfg, monkeypatch):
     w2.dirty = False
 
 
-def test_contact_gate_copes_like_the_user_did_and_check_reads_drawn_shapes(cfg):
-    """When one source / drain finger per column does not fit on the hBN, two are left ungated and the
-    bus corner trimmed (the user's own fix on Device 2026-11-16); Check reads the shapes as they are,
-    also after they are drawn by hand."""
+def test_contact_gate_never_drops_a_finger_and_check_reads_drawn_shapes(cfg):
+    """Every finger needs its tooth (user, 2026-11-22): when the hBN under the right-most fingers' teeth is missing, the
+    generator says so (no finger is left ungated to make it fit); Check reads the shapes as they are, also drawn by hand."""
     spec, flow = _flow_spec()
     bp = bondpads.default_preset()
     hb = ef.generate(spec, flow, "hall_bars", cfg, bp)
@@ -1344,18 +1344,19 @@ def test_contact_gate_copes_like_the_user_did_and_check_reads_drawn_shapes(cfg):
     st.outlines[mbn.uid] = [arr.to_chip([(-hs - 30, -25), (u_cut, -25), (u_cut, -1.0), (hs + 30, -1.0), (hs + 30, 25), (-hs - 30, 25)])]
     apply_answers(cfg, {"preset:cg.hbn_margin_um": 0.2})                       # TEST VALUE
     apply_answers(cfg, {"preset:cg.bus_tmd_gap_um": 0.5})                      # TEST VALUE
+    with pytest.raises(ValueError, match="every finger gated"):
+        ef.generate(spec, flow, "contact_gate", cfg, bp)
+    st.outlines[mbn.uid] = [arr.to_chip([(-hs - 30, -25), (hs + 30, -25), (hs + 30, 25), (-hs - 30, 25)])]
     ef.generate(spec, flow, "contact_gate", cfg, bp)
-    assert st.comb["n_skip"] == 2 and st.comb["skip"] == {"top": "first", "bottom": "last"}
-    gated = fg.gated_fingers(arr, st.shapes["contact_gates"])
-    assert gated["top"] == set(range(2, arr.n)) and gated["bottom"] == set(range(arr.n - 2))
     rows = {r["rule"]: r for r in ef.rule_report(spec, flow, "contact_gate", cfg)}
     assert all(r["status"] in ("met", "warning") for r in rows.values()), rows
-    # drawn by hand: a tooth stretched onto an ungated finger is caught by Check
-    polys = [list(q) for q in st.shapes["contact_gates"]]
-    bad = arr.to_chip([(arr.u_of(0) - 0.3, 3.0), (arr.u_of(1) + 0.3, 3.0), (arr.u_of(1) + 0.3, 4.0), (arr.u_of(0) - 0.3, 4.0)])
-    st.shapes["contact_gates"] = polys + [bad]
+    # drawn by hand without the outer bottom finger's tooth: caught by Check
+    lay = st.comb
+    st.shapes["contact_gates"] = [c["polygon"] for c in fg.contact_gate_comb(arr, skip={"bottom": "last"}, dirs=lay["dirs"],
+                                                                              tooth=lay.get("tooth")).values()]
     rows = {r["rule"]: r for r in ef.rule_report(spec, flow, "contact_gate", cfg)}
-    assert rows["Contact gate off the ungated (source / drain) fingers"]["status"] == "violated"
+    assert rows["Every finger gated (source / drain too)"]["status"] == "violated"
+    assert f"bottom {arr.n}" in rows["Every finger gated (source / drain too)"]["found"]
     ef.check(spec, flow, "contact_gate", cfg)
     assert any(i["code"] == "cg_rule" for i in st.issues)
 
@@ -1373,14 +1374,14 @@ def test_draw_contact_gate_window(cfg):
     d = p.shape_dialog
     assert d.purpose == "contact_gates" and not d.canvas.polys
     arr = fg.FingerArray.from_json(p.flow.step("hall_bars").array)
-    comb = fg.contact_gate_comb(arr, skip={"top": "first", "bottom": "last"}, dirs={"top": 1.0, "bottom": -1.0})
+    comb = fg.contact_gate_comb(arr, skip={}, dirs={"top": 1.0, "bottom": -1.0}, n_skip=0)
     for c in comb.values():                                                     # drawn with the polygon tool
         d.canvas.polygonDrawn.emit([tuple(q) for q in c["polygon"]])
     st = p.flow.step("contact_gate")
     assert len(st.shapes["contact_gates"]) == 2 and set(d.canvas.polys) == {"shape:0", "shape:1"}
     p.check()
     rows = {r["rule"]: r for r in p.check_dialog.rows}
-    assert rows["Source and drain fingers left ungated"]["status"] == "met"           # checked as drawn
+    assert rows["Every finger gated (source / drain too)"]["status"] == "met"         # checked as drawn
     p.check_dialog.close()
     moved = [(x, y + 5.0) for x, y in st.shapes["contact_gates"][0]]               # dragged off its fingers
     d.canvas.polygonEdited.emit("shape:0", moved)

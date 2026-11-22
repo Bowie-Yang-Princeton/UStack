@@ -1,7 +1,7 @@
 # AGENTS.md — handoff for AI agents working on UStack
 
 Read this first. It tells you what UStack is, how it is put together, the rules you must keep,
-what is done, what is not, and what the lab still has to supply. Last updated 2026-11-21 (v0.5:
+what is done, what is not, and what the lab still has to supply. Last updated 2026-11-22 (v0.5:
 Stage 2 rebuilt as a workflow of EBL steps on a saved bond-pad preset, finger-array pattern (Hall bars,
 contact-gate comb, gate contacts, electrodes) fitted to the twisted region, multi-magnification
 alignment and flake location (`registration`), merged GDS export, measure tool; v0.4:
@@ -543,20 +543,148 @@ User decisions (v0.5, 2026-11-17):
   step (`MainWindow.layout_auto_applied`). Order matters: middle hBN before the top gate failed far more often (the comb's
   leads end at the middle hBN's corners, where the top gate must pass). On the lab's Device 2026-11-16 flakes scrambled 6
   ways (10 pairs; test values in a scratch config): all six valid, 12–51 s. `fingers.tmd_keepout` is memoized (copy returned).
-- (2026-11-21, user) **Gates stick out on opposite sides** (auto design): the top gate avoids the half-plane beyond the twisted
-  region (+ contact-to-graphite clearance + shift + 2 µm) on the bottom gate's side (direction: twisted middle → the bottom
-  gate's contact place; `_bg_side`), soft (`GATE_SIDE_WEIGHT` 0.25 × AVOID_WEIGHT per µm²) with a small reward on the other
-  side (`GATE_OTHER_SIDE_WANT`); a layout where it could not (> `GATE_SIDE_NOTE_UM2` 25 µm²) is noted ("also sticks out on
-  … side") and ranked below those that could (`State.side_over` in the candidate score, after the contacts). The bottom-gate
-  stage also offers placements sticking out one way only (4 directions: ± along / across the fingers, `_half_planes`
-  avoided on the other side) so a long bottom gate centred on the device does not leave the top gate no side. On the lab
-  flakes scrambled 6 ways: all six opposite, 18–28 s, one 148 s (it backtracks to the bottom hBN; 74 s before).
+- (2026-11-22, user; replaces the 2026-11-21 half-plane penalty, too slow and not guaranteed) **Gates stick out on opposite
+  sides** (auto design): ≥ `GATE_MIN_APART_DEG` (120°) apart, ideally 180°, each long side along its way, the bottom gate's
+  along the channel's long side (the finger array's axis). `_aligned`: the gate turned so its long side (`_long_axis_deg`,
+  smallest enclosing rectangle) lies along a direction, slid from the centre that way as far as its rules allow (near end
+  at the far edge of what it must hold, stepping back `ALIGN_STEP_UM`), with small offsets across (`ALIGN_OFFSETS_UM`), both
+  ends tried. Bottom gate: along ±u (twisted region held first, else only the channel); the turn-and-shift search only when
+  neither fits. Top gate: opposite where the bottom gate sticks out (`_stick_dir`: middle of its part beyond the twisted region
+  + clearance), then ±30°, ±60° (`GATE_TURNS_DEG`); else the search, noted ("do not stick out on opposite sides") and
+  ranked lower (`State.gate_angle`, `Candidate.gate_angle` / `axis`). The device stage now tries last the overlaps the top
+  gate cannot cover by the misalignment at any turn (`_tg_can_cover`; with the twist set the overlap can come out wider).
+  On the lab's Device 2026-11-16 flakes scrambled 6 ways (10 pairs; shift 2 µm in the scratch config): all six valid,
+  gates 176–178° apart, bottom gate exactly along the channel, 19–33 s.
 - (2026-11-21, user) **Abort** (auto design window, red, shown while running): the window is free at once (the worker's
   signals are cut, its result dropped); the run stops within a moment — `ustack/cancel.py` (per-thread check set by
   `auto_design`, `poll()` in the search loops, `fingers._fit_at_angle` and `fit_contact_gate`).
 - (2026-11-21, user) **Flake layout › Export to image…**: the canvas as shown (`viewport().grab()`, Retina resolution) as a JPG
   (quality 95); where / name in `save_gds.ask_save_path` (the GDS window made general: device folder by default or another
   folder, remembered under "image_dir"). `MainWindow.save_layout_image(path)` for code.
+- (2026-11-21, user) **Auto design's planned metal**: Apply (`al.apply_candidate`) also keeps the candidate's fingers, contact
+  gate and gate-contact squares (Flake-layout frame) in `spec.stage2["auto_design"]` (`ef.auto_plan`, `AUTO_PLAN_PATTERNS`:
+  hall_bar_contacts ← fingers, contact_gate ← comb, leads ← zones) and closes the window; one undo step undoes both.
+  `ef.layout_patterns(..., sources=)` gives per pattern layer Stage 2's shapes where that step has generated them (they replace
+  the plan; frame = the fabricated flakes', else `_pattern_frame` from any Stage 2 outline incl. plans), else the plan
+  (source "plan"). Flake layout › Show metal parts (ticked on Apply) draws the plan dashed; the Structure tab draws it
+  (`structure_footprints` no longer needs a flake on the chip when a plan exists; title "· with the auto design"); the auto
+  design window, opened again, shows the applied layout's metal and its summary. The plan does not follow flakes moved later.
+- (2026-11-22, user) **Device layers take their twist**: they start as they lie in their pictures and each is turned by
+  its `twist_deg` (Stack tab; relative to the device layer below, counter-clockwise; empty = 0): layer k's border turn =
+  base + Σ twists up to k (`ef.device_twist_targets`; a border's turn = `ef.border_turn` = its image's `angle_deg`, else
+  `spec.stage2["layout_turns"]`, kept with the device — replaces the session-only `_layout_turns`). `ef.apply_device_twist`
+  turns borders and images about their middles (`ef.turn_layer`); layers on the chip (Stage 2) are skipped. The main window
+  runs it on every `spec_changed` (`_sync_twist`; a typed twist turns the border in Flake layout, Flake images and the
+  Structure tab) and when a device is opened / made (status says what turned). Turning one device layer by hand (rotate
+  handle, plan slider → `turn_border`) is the anchor: the others turn with it, the twist kept. The auto design starts from
+  the pictures: the lowest device layer at its picture's angle when it may move (else where it is), the others by their
+  twists (on a copy); the poses it returns include that turn (`al.auto_design`), so Apply puts the borders exactly there.
+- (2026-11-22, user) **Reference angle** (Flake images › Selected flake, every image; `image["ref_angle_deg"]`, default 0, a
+  circled ? (`widgets.help_button`, `style` icon "help") explains it): the lattice direction measured from the image's long
+  side (counter-clockwise as shown; e.g. by AFM). `ef.lattice_turn` = border turn + reference angle (mirrored: 180 − ref).
+  The twist now acts on lattices: `device_twist_targets` / `apply_device_twist` turn each device layer so its lattice lies
+  at its twist to the device layer below; any other traced flake given a twist (`ef.twist_layer_uids`, e.g. an hBN for a
+  graphene–hBN moiré) is turned to its twist from the nearest device layer in the stack, and the auto design keeps its
+  turn (`Values.locked`, searched with `angles=[0]`, never `_aligned`). Typing the angle resyncs (`set_image_param` →
+  `spec_changed`).
+- (2026-11-22, user: "my earlier description is incorrect") **Every finger gets a contact-gate tooth, source / drain too**
+  (`ebl_flow.GATE_SOURCE_DRAIN = True` → `leave_sd = False` in the generator and the auto design, `autolayout._leave_sd`):
+  the bus spans the whole column, no finger is left ungated to make the comb fit (it is shortened / reversed / trimmed,
+  else an error "…, every finger gated"); Check row "Every finger gated (source / drain too)" (lists the ones missing)
+  replaces "Contact gate off the ungated fingers", "Gated fingers" and "Source and drain fingers left ungated". This
+  supersedes the 2026-11-17 entries on ungated outer fingers (`CG_LAYOUTS` skips, `CG_MAX_SKIP`); the old behaviour is kept
+  behind `GATE_SOURCE_DRAIN = False`.
+- (2026-11-22, user: test on Device 2026-11-21) **Auto design fixes**: with no pair count asked, the bond pads' count is an
+  upper limit — when no overlap holds it, the most the device layers hold is used (noted); an explicit count that does not
+  fit says how many do. After the device stage, `_cover_problems` checks that the top gate can cover the twisted region and
+  the middle hBN can hold it (+ the TMD by the Xu margin) by their margins + misalignment at some turn (`_can_hold`, a
+  must-only search); overlaps failing it are tried last (`State.blockers`), and when all fail the run stops at once with the
+  reason. `_aligned` slides in 2 µm steps, then 0.5 µm. Device 2026-11-21 (lab config: shift 2 µm, Xu margin 1 µm): with its
+  90° twist no layout exists — the WSe2 halves' union (~27 × 32 µm) needs a middle hBN ~33 × 38 µm, it is 30.8 µm wide (stops
+  in 24 s, said); with a 3° test twist: 10 pairs (the most these halves hold; the bond pads take 22), gates 169–177° apart,
+  every finger gated, 61 s. Device 2026-11-16 ×6 scrambles: all valid, 16–56 s.
+- (2026-11-22, user: a top hBN covered a contact-gate bus lead entirely) **Landings stay free** (auto design): the top hBN
+  and cap flakes may never cover a finger electrode's minimal landing (`_landing_min`: the finger's last
+  `MIN_LANDING_WIDTHS` (2) electrode widths + clearance + misalignment) nor a contact-gate lead's landing (`_cg_zones`); the
+  full overlap (`_landing_zones`) is only preferred (the generator slides a finger electrode out past the flakes above).
+  The top gate keeps off those places by the graphite clearance + misalignment too (its hBN covers that much round any
+  crossing). The contact gate's leads go where the top gate is not: `fingers.fit_contact_gate(away=)` orders the layouts by
+  how much of the top gate (grown by `electrodes.cg_overlap_um` + `ebl.contact_to_graphite_gate_min_um`) lies where each
+  lead goes (`_lead_side_cost`), adding both-leads-to-one-side layouts (`SAME_SIDE_LAYOUTS`); `ebl_flow._top_gate_keepaway`
+  = the top gate on the chip at the step, else where Flake layout plans it (also in Stage 2's Generate; noted when both go
+  one way). The middle hBN avoids the top gate's surroundings beyond the device (`MBN_NEAR_TG_COST`). `_evaluate` lists a
+  covered contact-gate landing in `blocked`. `_stage_mbn` now returns its rejected placements so the reason is reported.
+- (2026-11-22, user) **Auto design on a partly made sample / parts fixed by hand**: the window's "Metal kept as it is"
+  (`al.made_patterns`): the Hall-bar fingers and the contact gate from Stage 2 (as found written; mapped through the frame
+  the flakes on the chip set; ticked by default when a later step has images or found flakes = made) or, without them,
+  from the auto design applied last (`spec.stage2["auto_design"]` now keeps `array` and `reach`). `auto_design(fixed=)`:
+  kept fingers → `_device_on_array` (each movable device layer must hold every pair's tip strip, `_pair_strips`, so their
+  overlap does; turned together with the twist kept, `ON_ARRAY_STEP_DEG` 5°, `ON_ARRAY_KEEP` 4 placements each combined,
+  the combinations tried against the top gate / middle hBN (`_cover_problems`, smallest overlap and smallest union
+  alternately, `ON_ARRAY_TESTS`)), the bottom hBN placed round the fingers, nothing generated; kept contact gate (only with
+  its fingers) → the middle hBN and the device layers are kept too (`comb_holders`: it is written on them) and the middle
+  hBN holds it. Flakes are fixed by unticking them (hint text, Fix all / Free all); flakes on the chip are always kept. The
+  left column scrolls. `_cover_problems`' top-gate check also keeps off the finger landings. On Device 2026-11-16's
+  Stage 2 data (scratch config): with shift 2 µm the run stops at once — the lab's own top gate and middle hBN on that chip
+  do not meet the configured margins either (Xu 1 µm + shift); synthetic partly made sample: `test_auto_design_on_a_partly_made_sample`.
+- (2026-11-22, user) Device 2026-11-21 with its twist changed to 4°: 10 pairs, gates 177° apart, both contact-gate leads
+  away from the top gate, the top hBN off their ends, every finger gated, ~50 s.
+- (2026-11-22, user) **Flakes kept on the bottom hBN if possible** (auto design; metal over a flake stepping down off it can
+  break at the step edge): the bottom hBN first tries to hold the device layers whole (`T_all`), the middle hBN, top hBN
+  and caps pay `STEP_EDGE_COST` (0.25 × AVOID_WEIGHT per µm²) for area off it (`_off_bbn`, out to `_reach_of` the flake);
+  candidates are ranked by the non-gate area off it (`State.off_bbn`, after the gate sides) and each says what still
+  steps off ("Off the bottom hBN …"). The gates are exempt: they must stick out (pulling the top gate back onto the hBN
+  made it reach over the contact-gate leads' side — tried, removed). Device 2026-11-16 ×6: middle hBN ≤ 17 µm² off, top
+  hBN on it; Device 2026-11-21: middle hBN 19 µm² (was 112–174).
+- (2026-11-22, user: auto design too slow again) **Faster auto design** (same layouts): identical searches in a run are
+  done once (`_MEMO`, keyed by flake + `Targets.key()`; `accept_key` names what an `accept` check depends on; cleared per
+  run); the turns of a correlation scan run in parallel threads (`_pool`, numpy's FFT releases the GIL; `current_check`
+  hands the Abort check to them); want and avoid share one inverse transform and the tolerant pass reuses its spectrum;
+  `_exact_ok` caches the merged targets on the `Targets` (`_targets_cache`) and rejects by bounding box first. The aligned
+  top gate offers its other offsets / ends when a later stage asks for more (`ALIGN_DISTINCT_UM`). Device 2026-11-21:
+  61 → 27–31 s; Device 2026-11-16 ×6: 16–56 → 14–36 s. (OpenCV's DFT was not faster than numpy's here; scipy is not a
+  dependency.)
+- (2026-11-22, user) **Shift-click chooses several outlines** (every canvas, as in PowerPoint): Shift / Ctrl / ⌘-click on an
+  outline's line adds it to `Canvas.multi` or takes it out (`outlinesSelected`); with several, `Canvas.selection()` is the
+  group: the rotate handle turns all about their common area centroid, the stretch handles stretch the group's box,
+  dragging one moves all (drag canvases), each outline committed (`_commit_all`, the group kept after the redraw);
+  `rotate_active` / `scale_active` act on the group. Choosing another outline alone (`set_active_polygon` with a key not
+  in the group) or a plain click on nothing drops the group.
+- (2026-11-22, user: quality worse and ~2 min locally; the saved Device 2026-11-21 design had a contact-gate lead over bare
+  back gate) **Auto design reworked** — causes found on that design: (a) a lead's end lay where the middle hBN reaches past
+  the bottom hBN, over bottom-gate graphite with only the thin middle hBN between (gate leak); (b) the both-leads-one-side
+  layouts ran the leads along the bottom gate; (c) the device stage's check let through overlaps whose middle hBN could
+  hold the WSe2 but not the comb's teeth, so every later stage searched in vain (backtracking, time). Now:
+  **the comb is fitted inside middle hBN ∩ bottom hBN** (`ebl_flow.bottom_hbn_under`, Stage 2 Generate and the auto design;
+  Check row "Contact gate on the bottom hBN"); **leads opposite again** (the lab's layouts; `SAME_SIDE_LAYOUTS` no longer
+  offered); the middle hBN avoids the bottom gate beyond the array (`MBN_OVER_BG_COST`, `_beyond_array`) and combs are
+  scored by lead area over it (`LEAD_ON_BG_COST`); `_cover_problems` includes the teeth (`_teeth_estimate`); the device
+  stage returns every distinct overlap and `_rank_device_states` picks those the top gate / middle hBN can hold;
+  **misalignment fallback**: the device stage runs once, then the rest with the full `stack.alignment_shift_um`, else half,
+  else none (noted on the candidates: "Misalignment margin … of the lab's …"); no pair count → one pass at the bond pads'
+  count (else none), then the most compact overlap for the most pairs; the pair estimate is vectorised (`_runs_arrays`,
+  reach only for runs holding the target) and tries 10° steps first (`PAIR_STEP_DEG`). The lab's own final design on these
+  flakes (Device 2026-11-16) leaves 2 + 2 fingers ungated and its leads over the (hBN-covered) bottom gate 56 µm².
+  Results (lab config, shift 2 µm): the saved 2026-11-21 flakes 20 s, 2026-11-16's flakes 21 s, six scrambles 15–28 s —
+  all valid with the full margin, gates 176–179° apart, no comb over bare bottom gate, leads over the covered bottom gate
+  0–39 µm². Auto-design tests 228 → ~120 s.
+- (2026-11-22, user) **The last run's layouts are kept**: `apply_candidate(spec, cand, cands)` stores them
+  (`Candidate.to_json`, `plan["candidates"]`, `plan["applied"]`); the window lists them again on opening (`saved_candidates`,
+  "· applied"), any can be applied. Apply now puts each border at the candidate's outline itself (rigid fit from where it
+  is, the image following), so layouts of one run can be applied one after another.
+- (2026-11-22, user: hand-corrected layout in Device 2026-11-21 — bottom hBN shifted, middle hBN turned −6°, top hBN −19°)
+  **Auto design learns from it**: the auto layout had only one contact-gate lead (the top bus had no room; the top hBN
+  covered it), the middle hBN reaching off the bottom hBN's edge, and the top hBN's long side lined up with the middle
+  hBN's (it was rewarded for covering the comb). Now: the bottom hBN wants room round the device for the middle / top hBN
+  (`ROOM_WANT`, the twisted region grown by their half size, `_half_size`); the middle and top hBN are placed inside the
+  bottom hBN by the misalignment first (`_inside_bbn` as hard), else with the step-edge cost; a middle hBN whose comb lacks
+  a bus lead is rejected (every bus needs its lead and landing; `_evaluate` lists a missing one in `blocked`); the top hBN
+  no longer wants the comb and avoids its bars beyond the array (`TBN_ON_LEADS_COST`), so they run out from under it.
+  The misalignment fallback bounds each attempt's backtracking (1 widening at the full margin, 2 at half, unlimited at
+  the last) so a margin that cannot work is left quickly. The user's own corrected layout meets the margins only without
+  the misalignment (0 µm). Results (lab config): saved 2026-11-21 flakes, 2026-11-16 flakes and six scrambles — all 2/2
+  leads, 53–62 µm² of bar exposed beyond the top hBN, middle and top hBN fully on the bottom hBN, top-hBN axis no longer
+  following the middle hBN's, gates 175–180°, no comb over bare bottom gate; misalignment 1 µm (one 0 µm), 28–40 s (one 69 s).
 - (2026-11-21, user) **First Save asks the device's name** (`MainWindow._name_new_device`, when `spec_path` is None): a name
   already in the library is refused (asked again); files copied into the folder of the old name before (Flake images,
   Stage 2 images) move to the new folder and the spec's paths follow (`devices.rewrite_paths`, then the Stage 2 flow reloads).
@@ -778,7 +906,7 @@ read the file, not this list.)
   most central). Verified with KLayout booleans. Shapes are built in the local frame, merged, then
   rotated once (no grid slivers); the fan piece has square ends and a convex-hull joint.
 - **Flow steps** (`ebl_flow.generate`): Hall bars = fit + fingers; contact gate = comb (one tooth per
-  finger, bus beyond the outer tooth: top column to −u, bottom to +u); electrodes = one group at a time
+  finger — every finger, source / drain too since 2026-11-22 — bus beyond the outer tooth); electrodes = one group at a time
   (`ELECTRODE_GROUPS`, see §2 2026-11-19): leads from the finger landing points (along the finger to its far end),
   from the comb bus ends (`stage2.assign_tips`, tips used by the other groups excluded), and `gate_contact` per gate;
   all routed together by `router.route_nets` (§2, 2026-11-20), each ending in its landing square.
@@ -863,7 +991,7 @@ Wait ~400 ms after switching tabs (they cross-fade).
 
 `ustack/ui/style.py` is a copy of `AFM data viewer/afm_style.py` with a few edits: module docstring,
 ImportError text, `ASSET_DIR` (→ `ustack/assets`), settings key `("Uri Lab", "UStack")`, About text
-/ menu label, the `USTACK_PANELS` env var, a `redo` icon (mirrored `undo`) and the `addPoint` / `selectPoints` / `arrowDown` icons in `_SVG`. To pick up a newer UAnalysis style, copy the file
+/ menu label, the `USTACK_PANELS` env var, a `redo` icon (mirrored `undo`) and the `addPoint` / `selectPoints` / `arrowDown` / `help` icons in `_SVG`. To pick up a newer UAnalysis style, copy the file
 over and re-apply these edits. Use its widgets (`Card`, `Panel(kind=…)`, `button(...)`,
 `TabWidget`, `ComboBox`, `CheckBox`, `Slider`, `Banner`, `Pill`, `label(role=…)`) and call
 `widgets.modernize(root)` after building a panel (frames fields, adds combo chevrons). One navy

@@ -456,7 +456,7 @@ class MainWindow(FramelessMainWindow):
         turn.setContentsMargins(6, 0, 6, 2)
         self.layout_metal = CheckBox("Show metal parts")
         self.layout_metal.setToolTip("The fingers, contact gate and electrodes generated in Stage 2, where they are relative to the flakes "
-                                     "(not editable here)")
+                                     "— before that, the metal parts the auto design planned (dashed). Not editable here.")
         self.layout_metal.toggled.connect(lambda _on: self.refresh_layout_canvas())
         turn.addWidget(self.layout_metal)
         turn.addStretch(1)
@@ -468,7 +468,6 @@ class MainWindow(FramelessMainWindow):
                               "gate contacts and electrode landings (turn and shift only)"))
         lay.addLayout(rot)
         lay.addLayout(turn)
-        self._layout_turns: dict[str, float] = {}           # turn of borders without an image (this session)
         c.polygonEdited.connect(self._layout_edited)
         c.polygonDrawn.connect(self._layout_drawn)
         c.polygonSelected.connect(self._layout_selected)
@@ -558,6 +557,7 @@ class MainWindow(FramelessMainWindow):
         if why == "new":
             self.stage2_panel.inputs.outlines.clear()
         self.refresh_all()
+        self._twist_on_open()
         self.check_panel.run()
         if why == "new":
             self.reset_history()
@@ -576,6 +576,8 @@ class MainWindow(FramelessMainWindow):
         self.stage2_panel.inputs = StepInputs(purposes=[])
         self.stage2_panel.design = self.stage2_panel.report = None
         self.refresh_all()
+        if self._twist_on_open():
+            self.dirty = True
         self.check_panel.run()
         self.reset_history()
         # the EBL canvas as saved (image on canvas, flakes, patterns, view); a saved view is applied when it is on screen
@@ -584,6 +586,18 @@ class MainWindow(FramelessMainWindow):
         else:
             self.ebl_flow.redraw(fit=True)
         self.status(f"Opened {path}")
+
+    def _twist_on_open(self) -> dict:
+        """A device opened / made: its device layers take their twists (user, 2026-11-22), said in the status bar."""
+        turned = self._sync_twist()
+        if turned:
+            self._reset_outline_cache()
+            self.flake_panel.refresh()
+            self.refresh_structure()
+            self.refresh_layout_canvas()
+            self.status("Device layers turned by their twist: " + ", ".join(
+                f"{self.spec.layer(u).label} {d:+.2f}°" for u, d in turned.items()))
+        return turned
 
     def close_device(self) -> None:
         """Nothing open (after the open device was deleted from the library)."""
@@ -790,7 +804,9 @@ class MainWindow(FramelessMainWindow):
 
     def spec_changed(self, what: str = "") -> None:
         self.dirty = True
+        twisted = {}
         if not self._restoring:
+            twisted = self._sync_twist()                  # a twist typed / a device layer traced: the borders turn
             self._snap_timer.start()
             self._sync_outlines()
         if self.spec is not None:
@@ -801,10 +817,10 @@ class MainWindow(FramelessMainWindow):
         if what in ("layers", "order", "material", "function"):
             self.stack_panel.refresh(self.stack_panel.current)
             self.pattern_panel.refresh()
-        if what in ("layers", "order", "material", "function", "name", "values", "value", "rules"):
+        if what in ("layers", "order", "material", "function", "name", "values", "value", "rules") or twisted:
             self.flake_panel.refresh()
         self.refresh_structure()
-        if what in ("layers", "order", "image", "material", "outline", "stage2"):
+        if what in ("layers", "order", "image", "material", "outline", "stage2") or twisted:
             self.refresh_layout_canvas()
 
     # ------------------------------------------------------------------ one traced border everywhere
@@ -859,7 +875,8 @@ class MainWindow(FramelessMainWindow):
             return
         # once Stage 2 knows where the flakes are on the chip (and has drawn patterns), the 3D stack shows them there
         chip = ef.structure_footprints(spec, self.ebl_flow.flow) if getattr(self, "ebl_flow", None) is not None else None
-        self.title_label.setText(f"{spec.name}  ·  {spec.family.replace('_', ' ')}" + ("  ·  with Stage 2" if chip else ""))
+        tag = ("  ·  with Stage 2" if chip[1].startswith("On the chip") or "patterns:" in chip[1] else "  ·  with the auto design") if chip else ""
+        self.title_label.setText(f"{spec.name}  ·  {spec.family.replace('_', ' ')}" + tag)
         self.title_label.setToolTip(chip[1] if chip else "")
         self.view3d.set_slabs(build_scene(spec, self.config, chip[0] if chip else None))
         summary = structured_summary(spec, self.config)
@@ -925,11 +942,13 @@ class MainWindow(FramelessMainWindow):
         view = ef.layout_view(self.spec, self.ebl_flow.flow) if getattr(self, "ebl_flow", None) is not None else {"fixed": {}}
         self._layout_fixed = view.get("step", {})
         hidden = set(self.view3d.hidden) if getattr(self, "view3d", None) is not None else set()   # the Flake images ticks
-        if getattr(self, "layout_metal", None) is not None and self.layout_metal.isChecked() and view.get("frame") is not None:
-            for uid, polys in ef.layout_patterns(self.spec, self.ebl_flow.flow, view).items():
+        if getattr(self, "layout_metal", None) is not None and self.layout_metal.isChecked() and getattr(self, "ebl_flow", None) is not None:
+            sources: dict = {}                          # Stage 2's patterns, else the auto design's plan (dashed)
+            for uid, polys in ef.layout_patterns(self.spec, self.ebl_flow.flow, view, sources).items():
                 layer = self.spec.layer(uid)
                 if uid not in hidden and layer is not None:
-                    c.add_overlay_polys(polys, layer_color(layer, self.config), 0.45, z=95 + self.spec.layers.index(layer), width=0.8)
+                    c.add_overlay_polys(polys, layer_color(layer, self.config), 0.45, z=95 + self.spec.layers.index(layer), width=0.8,
+                                        dash=sources.get(uid) == "plan")
         for z, layer in enumerate(self.spec.layers):
             if layer.uid in hidden:
                 continue
@@ -979,9 +998,11 @@ class MainWindow(FramelessMainWindow):
 
     def layout_auto_applied(self, moved: list, cand) -> None:
         """The auto design moved ``moved`` flakes' borders (and images) in Flake layout: one undo step."""
+        self.layout_metal.setChecked(True)              # the planned metal parts shown with the flakes
         self.spec_changed("image")
         self.flake_panel.refresh()
         self.refresh_layout_canvas(fit=True)
+        self.refresh_structure()
         self.status(f"Auto design applied: {len(moved)} flake(s) placed — {cand.summary()}")
 
     def _layout_selected(self, key: str) -> None:
@@ -990,9 +1011,23 @@ class MainWindow(FramelessMainWindow):
         if uid and self.spec is not None and self.spec.layer(uid) is not None:
             self.select_layer(uid)
 
+    @property
+    def _layout_turns(self) -> dict:
+        """Turn of borders without an image (kept with the device: ``ebl_flow.layout_turns``)."""
+        return ef.layout_turns(self.spec) if self.spec is not None else {}
+
     def _border_turn(self, layer) -> float:
-        img = layer.image or {}
-        return float(img.get("angle_deg", 0.0)) if img.get("um_per_px") else self._layout_turns.get(layer.uid, 0.0)
+        return ef.border_turn(layer, self.spec)
+
+    def _sync_twist(self, anchor: str | None = None) -> dict:
+        """The device layers turned by their twists (user, 2026-11-22): as they lie in their pictures, each turned by its
+        twist from the Stack tab relative to the device layer below; ``anchor`` (a device layer the user turned) keeps its
+        new turn and the others follow it. Layers on the chip (Stage 2) are left alone."""
+        if self.spec is None:
+            return {}
+        flow = self.ebl_flow.flow if getattr(self, "ebl_flow", None) is not None else None
+        fixed = set(ef.layout_view(self.spec, flow)["fixed"]) if flow is not None else set()
+        return ef.apply_device_twist(self.spec, anchor=anchor, skip=fixed)
 
     def _layout_lock_status(self, uid: str | None) -> None:
         layer = self.spec.layer(uid) if (self.spec is not None and uid) else None
@@ -1001,18 +1036,10 @@ class MainWindow(FramelessMainWindow):
             self.status(f"{layer.label} is on the chip ({ef.STEPS[step].name}): its shape and place come from Stage 2 (locked here)")
 
     def turn_border(self, layer, delta: float) -> None:
-        """Turn ``layer``'s traced border by ``delta``° about its middle; its image turns with it (or the session turn)."""
-        a = math.radians(delta)
-        m = np.array([[math.cos(a), -math.sin(a)], [math.sin(a), math.cos(a)]])
-        ctr = np.asarray(geo.centroid(layer.outline), float)
-        t = ctr - m @ ctr
-        layer.outline = [[float(x), float(y)] for x, y in np.asarray(layer.outline, float) @ m.T + t]
-        if (layer.image or {}).get("um_per_px"):
-            layer.image = ef._image_after(layer.image, m, t)
-        else:
-            self._layout_turns[layer.uid] = self._border_turn(layer) + delta
-            if layer.image is not None:
-                layer.image["placed"] = True
+        """Turn ``layer``'s traced border by ``delta``° about its middle; its image turns with it (or the kept turn)."""
+        ef.turn_layer(layer, delta, self.spec)
+        if layer.uid in ef.twist_layer_uids(self.spec):
+            self._sync_twist(anchor=layer.uid)            # the other device layers keep their twist to it
 
     def layer_image(self, uid: str):
         """The flake image of layer ``uid`` (read from its file the first time)."""
@@ -1112,6 +1139,9 @@ class MainWindow(FramelessMainWindow):
             self.dirty = True
             return
         layer.image[key] = value
+        if key == "ref_angle_deg":                        # the lattice direction changed: the twist turns the border
+            self.spec_changed("image")
+            return
         item = self.layout_canvas.images.get(uid)
         if key == "opacity" and item is not None:
             item.setOpacity(float(value))
@@ -1140,6 +1170,8 @@ class MainWindow(FramelessMainWindow):
                     if layer.image is not None:
                         layer.image["placed"] = True
                 layer.outline = [list(p) for p in pts]
+                if uid in ef.twist_layer_uids(self.spec):
+                    self._sync_twist(anchor=uid)  # the other device layers turn with it (their twists kept)
                 self.spec_changed("image")
                 self.flake_panel.refresh()
                 return

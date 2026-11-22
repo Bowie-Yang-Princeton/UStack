@@ -306,6 +306,14 @@ def flake_state(spec: DeviceSpec, st: "FlowStep", key: str, uid: str) -> tuple[s
     return text, True
 
 
+def bottom_hbn_under(spec: DeviceSpec, st: "FlowStep", hbn=None) -> list | None:
+    """The bottom hBN's outline at this step (the hBN under the fingers; not the one the comb is written on), or None."""
+    b = spec.by_role("bottom_hbn") or next((l for l in spec.layers if l.function == "bottom_gate_dielectric"), None)
+    if b is None or (hbn is not None and b.uid == hbn.uid):
+        return None
+    return st.outlines.get(b.uid) or None
+
+
 def hbn_under(spec: DeviceSpec, key: str):
     """The hBN a step's metal is written on: the nearest hBN layer below the step's own layer (the
     middle hBN under the contact gate)."""
@@ -321,6 +329,26 @@ def hbn_under(spec: DeviceSpec, key: str):
 def tmd_outlines(spec: DeviceSpec, st: "FlowStep") -> list[Poly]:
     """The device layers' (TMD) outlines at a step, every piece (the contact-gate bus keeps off them)."""
     return [q for u in device_layer_uids(spec) for q in (st.outlines.get(u) or [])]
+
+
+#: The contact gate covers every finger, the source / drain ones too (user, 2026-11-22: "source and drain fingers also need
+#: contact gates" — replaces leaving the outer finger of each column ungated). False restores the old behaviour.
+GATE_SOURCE_DRAIN = True
+
+
+def _top_gate_keepaway(spec: DeviceSpec, flow: "Flow", key: str, st: "FlowStep", config: LabConfig):
+    """The top gate's place on the chip at step ``key`` — its outline there, else where Flake layout plans it
+    (``not_yet_on_chip``) — grown by the contact-gate electrode overlap + the contact-to-graphite clearance; None when it
+    is not known. The contact-gate bus leads are sent where it is not (user, 2026-11-22)."""
+    tg = next((l for l in spec.layers if l.function == "top_gate"), None)
+    if tg is None:
+        return None
+    polys = st.outlines.get(tg.uid) or ([not_yet_on_chip(spec, flow, key)[tg.uid]] if tg.uid in not_yet_on_chip(spec, flow, key)
+                                        else None)
+    if not polys:
+        return None
+    grow = float(config.preset("electrodes.cg_overlap_um") or 0.0) + float(config.value("ebl.contact_to_graphite_gate_min_um") or 0.0)
+    return geo.sized(geo.regions(polys).merged(), grow)
 
 
 def has_source_drain(spec: DeviceSpec) -> bool:
@@ -655,6 +683,115 @@ def _image_after(image: dict, m: np.ndarray, t: np.ndarray) -> dict:
     return out
 
 
+# ====================================================================== twist of the device layers (user, 2026-11-22)
+def layout_turns(spec: DeviceSpec) -> dict:
+    """Turn (°) of traced borders that have no image, kept with the device (an image's own angle is the turn otherwise)."""
+    return spec.stage2.setdefault("layout_turns", {})
+
+
+def border_turn(layer, spec: DeviceSpec | None = None) -> float:
+    """How far ``layer``'s traced border is turned from the way it lies in its picture (counter-clockwise, °): its image's
+    angle in the Flake-layout frame; without an image, the turn kept in ``layout_turns`` (0 = as traced)."""
+    img = layer.image or {}
+    if img.get("um_per_px"):
+        return float(img.get("angle_deg", 0.0))
+    return float(((spec.stage2.get("layout_turns") or {}) if spec is not None else {}).get(layer.uid, 0.0))
+
+
+def turn_layer(layer, deg: float, spec: DeviceSpec | None = None) -> None:
+    """Turn ``layer``'s traced border by ``deg``° about its middle; its image turns with it (else the kept turn)."""
+    if not layer.outline:
+        return
+    a = math.radians(deg)
+    m = np.array([[math.cos(a), -math.sin(a)], [math.sin(a), math.cos(a)]])
+    ctr = np.asarray(geo.centroid(layer.outline), float)
+    t = ctr - m @ ctr
+    layer.outline = [[float(x), float(y)] for x, y in np.asarray(layer.outline, float) @ m.T + t]
+    if (layer.image or {}).get("um_per_px"):
+        layer.image = _image_after(layer.image, m, t)
+    else:
+        if spec is not None:
+            layout_turns(spec)[layer.uid] = border_turn(layer, spec) + deg
+        if layer.image is not None:
+            layer.image["placed"] = True
+
+
+def lattice_turn(layer, spec: DeviceSpec | None = None, image_angle: float | None = None) -> float:
+    """Direction of the flake's crystal lattice in the Flake-layout frame (°, counter-clockwise; user, 2026-11-22): the
+    border's turn plus the image's reference angle (``image["ref_angle_deg"]``: the lattice direction measured from the
+    image's long side, e.g. by AFM; 0 = along it). A mirrored image reverses the reference angle. ``image_angle`` = the
+    turn to evaluate at (default: the border's own)."""
+    img = layer.image or {}
+    turn = border_turn(layer, spec) if image_angle is None else float(image_angle)
+    ref = float(img.get("ref_angle_deg") or 0.0)
+    return turn + (180.0 - ref if img.get("mirror") else ref)
+
+
+def twist_layer_uids(spec: DeviceSpec) -> list[str]:
+    """Layers whose turn the twist sets: the device layers, and any other traced flake given a twist (relative to the
+    nearest device layer in the stack, e.g. an hBN aligned to graphene for a moiré)."""
+    devs = device_layer_uids(spec)
+    out = list(devs)
+    for layer in spec.layers[1:]:
+        if layer.uid not in devs and layer.twist_deg.value is not None and layer.outline and devs:
+            out.append(layer.uid)
+    return out
+
+
+def device_twist_targets(spec: DeviceSpec, anchor: str | None = None, ref_turn: float | None = None,
+                         ref_image_angle: float | None = None) -> dict[str, float]:
+    """The lattice direction (``lattice_turn``) each twist-tied traced layer must have (user, 2026-11-22): the device
+    layers as their lattices lie, each turned by its twist (``twist_deg``: relative to the device layer below,
+    counter-clockwise; empty = 0) — device layer k at base + Σ twists up to k; any other flake with a twist at the
+    nearest device layer's direction + its twist. ``base`` keeps ``anchor`` (default: the lowest traced device layer)
+    where it is, or puts the lowest one's lattice at ``ref_turn`` / its image at ``ref_image_angle``."""
+    devs = [spec.layer(u) for u in device_layer_uids(spec)]
+    devs = [l for l in devs if l is not None]
+    offs, all_offs, acc = {}, {}, 0.0
+    for i, l in enumerate(devs):
+        if i:
+            acc += float(l.twist_deg.value or 0.0)
+        all_offs[l.uid] = acc
+        if l.outline and len(l.outline) >= 3:
+            offs[l.uid] = acc
+    if devs:
+        index = {l.uid: i for i, l in enumerate(spec.layers)}
+        for uid in twist_layer_uids(spec):
+            if uid in all_offs:
+                continue
+            layer = spec.layer(uid)
+            near = min(devs, key=lambda d: (abs(index[d.uid] - index[uid]), index[d.uid] > index[uid]))
+            offs[uid] = all_offs[near.uid] + float(layer.twist_deg.value or 0.0)
+    if not offs:
+        return {}
+    first = next((u for u in offs if u in all_offs), next(iter(offs)))
+    if ref_image_angle is not None:
+        base = lattice_turn(spec.layer(first), spec, ref_image_angle) - offs[first]
+    elif ref_turn is not None:
+        base = float(ref_turn) - offs[first]
+    else:
+        a = anchor if anchor in offs else first
+        base = lattice_turn(spec.layer(a), spec) - offs[a]
+    return {u: base + o for u, o in offs.items()}
+
+
+def apply_device_twist(spec: DeviceSpec, anchor: str | None = None, skip=(), ref_turn: float | None = None,
+                       ref_image_angle: float | None = None) -> dict[str, float]:
+    """Turn the twist-tied traced layers (borders and images, about their middles) so their lattices lie at
+    ``device_twist_targets``; layers in ``skip`` (on the chip: their place comes from Stage 2) are left alone. Returns
+    uid → the turn applied (°)."""
+    out = {}
+    for u, target in device_twist_targets(spec, anchor, ref_turn, ref_image_angle).items():
+        if u in skip:
+            continue
+        layer = spec.layer(u)
+        d = math.remainder(target - lattice_turn(layer, spec), 360.0)
+        if abs(d) > 1e-6:
+            turn_layer(layer, d, spec)
+            out[u] = d
+    return out
+
+
 def orientation_from_chip(spec: DeviceSpec, st: FlowStep, key: str = "") -> dict | None:
     """The flakes found on the chip at this step → their relative positions and orientations in the
     design frame (Flake layout, the Structure tab's 3D stack).
@@ -892,6 +1029,12 @@ def generate(spec: DeviceSpec, flow: Flow, key: str, config: LabConfig, bondpads
         if key == "contact_gate":
             hbn = hbn_under(spec, key)
             hbn_polys = st.outlines.get(hbn.uid) if hbn is not None else None
+            # the comb also lies on the bottom hBN (user, 2026-11-22: a lead over the middle hBN where it reaches past the
+            # bottom hBN sat on bare back-gate graphite — only the thin middle hBN between them, a gate leak; and a step edge)
+            bottom = bottom_hbn_under(spec, st, hbn)
+            if hbn_polys and bottom:
+                both = geo.to_polys((geo.regions(hbn_polys).merged() & geo.regions(bottom).merged()).merged())
+                hbn_polys = both or hbn_polys
             if hbn_polys and p.cg_hbn_margin is None:
                 raise MissingValues([MissingItem("preset:cg.hbn_margin_um", "Contact gate inside its hBN by", "µm",
                                                  hint="The whole contact gate stays this far inside the hBN it is written on (saved as a "
@@ -903,13 +1046,16 @@ def generate(spec: DeviceSpec, flow: Flow, key: str, config: LabConfig, bondpads
                                                       "column's teeth are as short as that allows (saved as a preset, editable in Preset "
                                                       "dimensions).")])
             keepout = fg.tmd_keepout(tmd_polys, p.cg_tmd_gap)
-            leave_sd = not has_source_drain(spec)
+            leave_sd = not GATE_SOURCE_DRAIN and not has_source_drain(spec)   # every finger gated (user, 2026-11-22)
             avoid_note = []
             wmin = config.value("ebl.contact_width_min_um")
 
+            away = _top_gate_keepaway(spec, flow, key, st, config)     # the bus leads go where the top gate is not
+
             def fits(av):
                 try:
-                    return fg.fit_contact_gate(arr, hbn_polys, p.cg_hbn_margin, leave_sd, min_width=wmin, keepout=keepout, avoid=av)
+                    return fg.fit_contact_gate(arr, hbn_polys, p.cg_hbn_margin, leave_sd, min_width=wmin, keepout=keepout, avoid=av,
+                                               away=away)
                 except ValueError:
                     return None
             pieces = defect_pieces(flow, key, config)
@@ -932,7 +1078,10 @@ def generate(spec: DeviceSpec, flow: Flow, key: str, config: LabConfig, bondpads
                 avoid_note = ["The comb and its bus leads keep off the bubbles and cracks" + (
                     f", but for {len(skipped)} it cannot fit round ({_kinds_text(skipped)}; see the canvas)." if skipped else ".")]
             layout, cg_notes = fg.fit_contact_gate(arr, hbn_polys, p.cg_hbn_margin, leave_sd, min_width=wmin, keepout=keepout,
-                                                   avoid=avoid)
+                                                   avoid=avoid, away=away)
+            if away is not None and layout["dirs"].get("top") == layout["dirs"].get("bottom"):
+                cg_notes = cg_notes + ["Both bus leads go to the same side, away from the top gate (their electrodes must not "
+                                       "land under it or its hBN)."]
             cg_notes = cg_notes + avoid_note
             st.comb = layout
             comb = fg.contact_gate_comb(arr, skip=layout["skip"], dirs=layout["dirs"], extension=layout["extension"],
@@ -1771,33 +1920,85 @@ def layout_from_plan(spec: DeviceSpec, flow: Flow, st: "FlowStep", uid: str) -> 
     return True
 
 
-def layout_patterns(spec: DeviceSpec, flow: Flow, view: dict | None = None) -> dict[str, list[Poly]]:
-    """The patterned metal from Stage 2 (fingers, contact gate, electrodes) in the Flake-layout frame, per stack layer, clipped
-    to a window round the flakes (``STRUCTURE_WINDOW``): for the Structure tab and Flake layout's metal parts. Empty when
-    nothing is on the chip (no frame)."""
+#: Flake layout › Auto design's planned metal (user, 2026-11-21), kept in ``spec.stage2["auto_design"]`` in the Flake-layout
+#: frame: stack-layer function → the plan's key. Shown in Flake layout and the Structure tab until Stage 2 generates that
+#: step's pattern (which then takes its place).
+AUTO_PLAN_KEY = "auto_design"
+AUTO_PLAN_PATTERNS = {"hall_bar_contacts": "fingers", "contact_gate": "comb", "leads": "zones"}
+
+
+def auto_plan(spec: DeviceSpec) -> dict | None:
+    """The metal parts the auto design planned when its layout was applied (fingers, contact gate, gate-contact places),
+    or None."""
+    plan = (spec.stage2 or {}).get(AUTO_PLAN_KEY)
+    return plan if isinstance(plan, dict) and (plan.get("fingers") or plan.get("comb") or plan.get("zones")) else None
+
+
+def auto_plan_polys(plan: dict | None, function: str) -> list[Poly]:
+    if not plan or function not in AUTO_PLAN_PATTERNS:
+        return []
+    got = plan.get(AUTO_PLAN_PATTERNS[function]) or []
+    if isinstance(got, dict):
+        got = list(got.values())
+    return [[(float(x), float(y)) for x, y in poly] for poly in got if len(poly) >= 3]
+
+
+def _pattern_frame(spec: DeviceSpec, flow: Flow, view: dict) -> tuple[np.ndarray, np.ndarray] | None:
+    """Flake-layout frame → chip for the patterns: the fabricated flakes' frame, else one from the outlines Stage 2 has at
+    all (a plan is the traced border turned and moved, so it fixes the frame too)."""
+    if view["frame"] is not None:
+        return view["frame"]
+    every: dict[str, tuple[str, list[Poly]]] = {}
+    for k in flow.order:
+        st = flow.steps.get(k)
+        for uid, polys in ((st.outlines.items()) if st is not None else ()):
+            if polys and spec.layer(uid) is not None:
+                every[uid] = (k, [[tuple(map(float, q)) for q in poly] for poly in polys])
+    return layout_frame(spec, every)
+
+
+def layout_patterns(spec: DeviceSpec, flow: Flow, view: dict | None = None,
+                    sources: dict | None = None) -> dict[str, list[Poly]]:
+    """The patterned metal in the Flake-layout frame, per stack layer: Stage 2's fingers, contact gate and electrodes where
+    that step has generated them (clipped to a window round the flakes, ``STRUCTURE_WINDOW``), else the auto design's
+    planned metal (``auto_plan``). For the Structure tab and Flake layout's metal parts. ``sources`` (if given) gets
+    uid → "stage2" | "plan"."""
     view = view or layout_view(spec, flow)
-    frame = view["frame"]
-    if frame is None:
+    plan = auto_plan(spec)
+    frame = _pattern_frame(spec, flow, view)
+    if frame is None and plan is None:
         return {}
-    flakes = [poly for polys in view["fixed"].values() for poly in polys]
-    flakes += [[tuple(q) for q in l.outline] for l in spec.layers[1:]
-               if l.uid not in view["fixed"] and l.outline and l.function not in PATTERN_LAYERS]
-    pts = [q for poly in flakes for q in poly]
-    if not pts:
-        return {}
-    xs, ys = [q[0] for q in pts], [q[1] for q in pts]
-    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
-    m = STRUCTURE_WINDOW * max(x1 - x0, y1 - y0) + 5.0
-    window = geo.region(geo.rect(x0 - m, y0 - m, x1 + m, y1 + m))
+    window = None
+    if frame is not None:
+        flakes = [poly for polys in view["fixed"].values() for poly in polys]
+        flakes += [[tuple(q) for q in l.outline] for l in spec.layers[1:]
+                   if l.uid not in view["fixed"] and l.outline and l.function not in PATTERN_LAYERS]
+        pts = [q for poly in flakes for q in poly]
+        if pts:
+            xs, ys = [q[0] for q in pts], [q[1] for q in pts]
+            x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+            m = STRUCTURE_WINDOW * max(x1 - x0, y1 - y0) + 5.0
+            window = geo.region(geo.rect(x0 - m, y0 - m, x1 + m, y1 + m))
     out: dict[str, list[Poly]] = {}
     for layer in spec.layers[1:]:
         if layer.function not in PATTERN_LAYERS:
             continue
         k, purposes = PATTERN_LAYERS[layer.function]
         st = flow.steps.get(k)
-        polys = [to_layout(frame, q) for purpose in purposes for q in ((st.shapes.get(purpose) or []) if st else [])]
+        raw = [q for purpose in purposes for q in ((st.shapes.get(purpose) or []) if st else [])]
+        if raw:                                         # generated in Stage 2: replaces the plan
+            if frame is not None and window is not None:
+                polys = geo.to_polys(geo.regions([to_layout(frame, q) for q in raw]).merged() & window)
+                if polys:
+                    out[layer.uid] = polys
+                    if sources is not None:
+                        sources[layer.uid] = "stage2"
+            continue
+        polys = auto_plan_polys(plan, layer.function)
         if polys:
-            out[layer.uid] = geo.to_polys(geo.regions(polys).merged() & window)
+            out[layer.uid] = polys
+            if sources is not None:
+                sources[layer.uid] = "plan"
     return out
 
 
@@ -1819,46 +2020,58 @@ def not_yet_on_chip(spec: DeviceSpec, flow: Flow, key: str) -> dict[str, Poly]:
 
 
 def structure_footprints(spec: DeviceSpec, flow: Flow) -> tuple[dict[str, list[Poly]], str] | None:
-    """The 3D stack of the Structure tab once a flake is on the chip (user, 2026-11-19 / 20), in the Flake-layout frame:
-    fabricated flakes as Stage 2 found them, the flakes still to come where Flake layout has them, and the patterned
-    metal (fingers, contact gate, electrodes) as generated, clipped to a window round the flakes (not generated = nothing
-    drawn). Centred on the twisted region (else the flakes). None while nothing is on the chip."""
+    """The 3D stack of the Structure tab once a flake is on the chip (user, 2026-11-19 / 20) or the auto design has planned
+    the metal (2026-11-21), in the Flake-layout frame: fabricated flakes as Stage 2 found them, the flakes still to come
+    where Flake layout has them, and the patterned metal (fingers, contact gate, electrodes) as Stage 2 generated it, else
+    as the auto design planned it (``layout_patterns``; neither = nothing drawn). Centred on the twisted region (else the
+    flakes). None while there is neither."""
     view = layout_view(spec, flow)
     frame = view["frame"]
-    if frame is None:
+    sources: dict[str, str] = {}
+    pats = layout_patterns(spec, flow, view, sources)
+    if frame is None and not pats:
         return None
     flakes: dict[str, list[Poly]] = dict(view["fixed"])
     for layer in spec.layers[1:]:
         if layer.uid not in flakes and layer.outline and layer.function not in PATTERN_LAYERS:
             flakes[layer.uid] = [[tuple(q) for q in layer.outline]]
-    pts = [q for polys in flakes.values() for poly in polys for q in poly]
+    pts = [q for polys in flakes.values() for poly in polys for q in poly] or \
+          [q for polys in pats.values() for poly in polys for q in poly]
     xs, ys = [q[0] for q in pts], [q[1] for q in pts]
     x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
-    pats = layout_patterns(spec, flow, view)
     tw = next((flow.steps[k].twisted for k in reversed(flow.order) if flow.steps.get(k) and flow.steps[k].twisted), None)
-    if tw:
+    plan = auto_plan(spec)
+    if tw and frame is not None:
         bx0, by0, bx1, by1 = geo.bbox(geo.regions([to_layout(frame, q) for q in tw]).merged())
+        cx, cy = (bx0 + bx1) / 2, (by0 + by1) / 2
+    elif plan and (plan.get("fingers") or plan.get("comb")):
+        bx0, by0, bx1, by1 = geo.bbox(geo.regions(auto_plan_polys(plan, "hall_bar_contacts")
+                                                  + auto_plan_polys(plan, "contact_gate")).merged())
         cx, cy = (bx0 + bx1) / 2, (by0 + by1) / 2
     else:
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
     out: dict[str, list[Poly]] = {}
-    patterns = []
+    patterns, planned = [], []
     for layer in spec.layers[1:]:
         if layer.function in PATTERN_LAYERS:
             polys = pats.get(layer.uid) or []
             if not polys:
                 out[layer.uid] = []                    # not designed yet: nothing drawn
                 continue
-            patterns.append(STEPS[PATTERN_LAYERS[layer.function][0]].name)
+            (planned if sources.get(layer.uid) == "plan" else patterns).append(STEPS[PATTERN_LAYERS[layer.function][0]].name)
         elif layer.uid in flakes:
             polys = flakes[layer.uid]
         else:
             continue
         out[layer.uid] = [[(x - cx, y - cy) for x, y in poly] for poly in polys]
     on = [spec.layer(u).label for u in view["fixed"]]
-    text = (f"On the chip (from Stage 2): {', '.join(on)}; the others where Flake layout has them"
-            + (f"; patterns: {', '.join(patterns)}" if patterns else ""))
-    return out, text
+    bits = [f"On the chip (from Stage 2): {', '.join(on)}; the others where Flake layout has them" if on
+            else "The flakes where Flake layout has them"]
+    if patterns:
+        bits.append(f"patterns: {', '.join(patterns)}")
+    if planned:
+        bits.append(f"planned by the auto design: {', '.join(planned)}")
+    return out, "; ".join(bits)
 
 
 # ====================================================================== the rule report (Check)
@@ -1946,13 +2159,22 @@ def rule_report(spec: DeviceSpec, flow: Flow, key: str, config: LabConfig) -> li
             if f.index not in gated[f.column]:
                 ungated.insert(geo.polygon(f.polygon))
         touch = cg & ungated
-        rows.append(_row("Contact gate off the ungated (source / drain) fingers", "no overlap",
-                         "clear" if touch.is_empty() else f"{geo.area(touch):.2f} µm² on them", "met" if touch.is_empty() else "violated",
-                         [geo.centroid(q) for q in geo.to_polys(touch)][:5]))
-        rows.append(_row("Gated fingers", "the fingers between the source / drain ones",
-                         f"top {len(gated['top'])} of {arr.n}, bottom {len(gated['bottom'])} of {arr.n}",
-                         "met" if gated["top"] or gated["bottom"] else "violated"))
-        if not has_source_drain(spec):
+        if GATE_SOURCE_DRAIN:
+            # every finger under the comb, the source / drain ones too (user, 2026-11-22)
+            free = [f"{c} {i + 1}" for c in ("top", "bottom") for i in range(arr.n) if i not in gated[c]]
+            rows.append(_row("Every finger gated (source / drain too)", f"all {arr.n} fingers of both columns",
+                             f"top {len(gated['top'])} of {arr.n}, bottom {len(gated['bottom'])} of {arr.n}"
+                             + (f" (not: {', '.join(free[:6])}{' …' if len(free) > 6 else ''})" if free else ""),
+                             "met" if not free else "violated",
+                             [geo.centroid(f.polygon) for f in arr.fingers() if f.index not in gated[f.column]][:5]))
+        else:
+            rows.append(_row("Contact gate off the ungated (source / drain) fingers", "no overlap",
+                             "clear" if touch.is_empty() else f"{geo.area(touch):.2f} µm² on them", "met" if touch.is_empty() else "violated",
+                             [geo.centroid(q) for q in geo.to_polys(touch)][:5]))
+            rows.append(_row("Gated fingers", "the fingers between the source / drain ones",
+                             f"top {len(gated['top'])} of {arr.n}, bottom {len(gated['bottom'])} of {arr.n}",
+                             "met" if gated["top"] or gated["bottom"] else "violated"))
+        if not GATE_SOURCE_DRAIN and not has_source_drain(spec):
             ends = {}
             for column in ("top", "bottom"):
                 free = sorted(set(range(arr.n)) - gated[column])
@@ -1967,6 +2189,12 @@ def rule_report(spec: DeviceSpec, flow: Flow, key: str, config: LabConfig) -> li
                               for c, (e, n) in ends.items())
             rows.append(_row("Source and drain fingers left ungated", "outer finger(s) of each column, at opposite ends", found,
                              "met" if ok else "violated"))
+        bottom = bottom_hbn_under(spec, st, hbn_under(spec, "contact_gate"))
+        if bottom:
+            off = cg - geo.regions(bottom).merged()
+            rows.append(_row("Contact gate on the bottom hBN", "inside it (no bare back gate or step edge under the comb)",
+                             "inside" if off.is_empty() else f"{geo.area(off):.2f} µm² off it", "met" if off.is_empty() else "violated",
+                             [geo.centroid(q) for q in geo.to_polys(off)][:5]))
         on_gap = cg & geo.sized(geo.region(arr.channel()), -0.01)    # 10 nm: grid rounding of rotated shapes, not an overlap
         depth = 0.0
         if not on_gap.is_empty():

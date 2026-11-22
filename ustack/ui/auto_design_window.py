@@ -1,7 +1,8 @@
 """Flake layout › Auto design… (user, 2026-11-21): the traced flakes placed automatically (:mod:`ustack.autolayout`) —
 how many finger pairs, which flakes may move, keep the twist angle, a thorough search; the run in the background
-(progress, Cancel); the best layouts found, each previewed with its fingers, contact gate and gate-contact places;
-Apply moves the borders (and their images) in Flake layout (one undo step)."""
+(progress, Abort); the best layouts found, each previewed with its fingers, contact gate and gate-contact places;
+Apply moves the borders (and their images) in Flake layout, keeps the planned metal parts (shown in Flake layout, the
+Structure tab and here when the window opens again) and closes the window (one undo step)."""
 
 from __future__ import annotations
 
@@ -11,7 +12,7 @@ from ..config import MissingValues, apply_answers
 from ..scene3d import layer_color
 from .canvas import Canvas
 from .dialogs import MissingValuesDialog
-from .style import Banner, BusyRing, CheckBox, Dialog, QtCore, QtWidgets, Splitter, button, label
+from .style import Banner, BusyRing, CheckBox, Dialog, QtCore, QtWidgets, Splitter, button, label, scroll
 from .widgets import CheckDelegate, PickTree, clickable_rows, modernize, row
 
 Qt = QtCore.Qt
@@ -22,17 +23,17 @@ class _Worker(QtCore.QThread):
     finished_ok = QtCore.pyqtSignal(list)
     failed = QtCore.pyqtSignal(str)
 
-    def __init__(self, spec, config, flow, movable, keep_twist, thorough, pairs):
+    def __init__(self, spec, config, flow, movable, keep_twist, thorough, pairs, fixed=None):
         super().__init__()
-        self.args = (spec, config, flow, movable, keep_twist, thorough, pairs)
+        self.args = (spec, config, flow, movable, keep_twist, thorough, pairs, fixed)
         self.stop = False
 
     def run(self):  # noqa: D401 - Qt API
-        spec, config, flow, movable, keep_twist, thorough, pairs = self.args
+        spec, config, flow, movable, keep_twist, thorough, pairs, fixed = self.args
         try:
             cands = al.auto_design(spec, config, flow, movable, keep_twist, thorough,
                                    progress=lambda t, f: self.progressed.emit(t, float(f)), cancelled=lambda: self.stop,
-                                   pairs=pairs)
+                                   pairs=pairs, fixed=fixed)
             self.finished_ok.emit(cands)
         except al.Cancelled:
             self.failed.emit("Cancelled.")
@@ -73,6 +74,8 @@ class AutoDesignDialog(Dialog):
                               "Among the layouts that hold them, the most compact device overlap is preferred.")
         lv.addLayout(row("Finger pairs", self.pairs, width=110))
         lv.addWidget(label("Flakes the design may move", "fieldLabel"))
+        lv.addWidget(label("Ticked: placed by the auto design. Unticked: kept where it is in Flake layout (fix it by hand "
+                           "first). Flakes already on the chip (Stage 2) are always kept.", "hint", wrap=True))
         self.list = clickable_rows(PickTree(), boxes=False)
         self.list.setItemDelegate(CheckDelegate(self.list))
         self.list.setHeaderHidden(True)
@@ -94,12 +97,32 @@ class AutoDesignDialog(Dialog):
             if layer.uid in fixed:
                 it.setToolTip(0, "On the chip already: its place comes from Stage 2 (kept)")
                 it.setFlags(it.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
-        self.list.setMinimumHeight(min(260, 30 + 27 * max(self.list.topLevelItemCount(), 3)))
-        lv.addWidget(self.list, 1)
+        self.list.setFixedHeight(min(300, 8 + 27 * max(self.list.topLevelItemCount(), 3)))
+        lv.addWidget(self.list)
+        lv.addLayout(row(None, button("Free all", lambda: self._tick_all(True), None, "Let the design place every flake not on the chip"),
+                         button("Fix all", lambda: self._tick_all(False), None, "Keep every flake where it is (then free the ones to place)")))
+        # metal already made — or kept from Stage 2 / the last auto design — stays as it is (user, 2026-11-22)
+        self.made = al.made_patterns(window.spec, self.flow)
+        self.keep_boxes = {}
+        if self.made:
+            lv.addWidget(label("Metal kept as it is", "fieldLabel"))
+            for key in ("hall_bars", "contact_gate"):
+                info = self.made.get(key)
+                if info is None:
+                    continue
+                box = CheckBox(info["text"] + ("  · made (on the chip)" if info["made"] else ""))
+                box.setChecked(bool(info["made"]))
+                box.setToolTip("Kept as it is: the flakes are placed round it and it is not generated again. "
+                               + ("Taken from Stage 2 (as found written when located)." if info["source"] == "stage2"
+                                  else "Taken from the layout the auto design applied last."))
+                box.toggled.connect(lambda _on: self._keep_changed())
+                lv.addWidget(box)
+                self.keep_boxes[key] = box
+            self._keep_changed()
         self.twist = CheckBox("Keep the twist angle between the device layers")
         self.twist.setChecked(True)
-        self.twist.setToolTip("The device layers keep their turn relative to each other (the twist is set by the crystal "
-                              "axes); only their shift is chosen")
+        self.twist.setToolTip("The device layers lie as in their pictures, each turned by its twist (Stack tab, relative to the "
+                              "device layer below); only their shift is chosen")
         lv.addWidget(self.twist)
         self.thorough = CheckBox("Thorough search (slower)")
         self.thorough.setToolTip("Keep more candidates at every stage")
@@ -122,10 +145,11 @@ class AutoDesignDialog(Dialog):
         self.results.setHeaderHidden(True)
         self.results.setRootIsDecorated(False)
         self.results.currentItemChanged.connect(lambda *_: self.preview())
+        self.results.setMinimumHeight(90)
         lv.addWidget(self.results, 1)
         self.detail = label("", "muted", wrap=True)
         lv.addWidget(self.detail)
-        split.addWidget(left)
+        split.addWidget(scroll(left))                    # the left column scrolls when the window is short
         self.canvas = Canvas()
         self.canvas.empty_text = "Run the auto design to see a layout here"
         self.canvas.trackpad_gestures = True
@@ -142,6 +166,58 @@ class AutoDesignDialog(Dialog):
         self.body.addLayout(foot)
         modernize(self)
         self._show_current()
+        # the layouts of the run applied last: listed again, the applied one chosen (user, 2026-11-22)
+        saved, applied = al.saved_candidates(window.spec)
+        if saved:
+            self._list_candidates(saved, applied, applied)
+            self.state.setText(self.state.text() + f"  The {len(saved)} layout(s) of that run are listed below.")
+
+    def _tick_all(self, on: bool) -> None:
+        for i in range(self.list.topLevelItemCount()):
+            it = self.list.topLevelItem(i)
+            if it.flags() & Qt.ItemFlag.ItemIsUserCheckable:
+                it.setCheckState(0, Qt.CheckState.Checked if on else Qt.CheckState.Unchecked)
+
+    def _keep_changed(self) -> None:
+        hb, cg = self.keep_boxes.get("hall_bars"), self.keep_boxes.get("contact_gate")
+        if cg is not None and hb is not None:                 # the comb lies on the fingers: kept only with them
+            if cg.isChecked() and not hb.isChecked():
+                hb.setChecked(True)
+            cg.setEnabled(hb.isChecked())
+        keep_fingers = hb is not None and hb.isChecked()
+        # a contact gate kept as it is is written on the middle hBN, over the device layers: those stay where they are
+        try:
+            holders = set(al.comb_holders(al.roles(self.win.spec, self.config)))
+        except ValueError:
+            holders = set()
+        keep_comb = cg is not None and cg.isChecked() and cg.isEnabled()
+        held = getattr(self, "_held", {})
+        for i in range(self.list.topLevelItemCount()):
+            it = self.list.topLevelItem(i)
+            uid = it.data(0, Qt.ItemDataRole.UserRole)
+            if uid not in holders:
+                continue
+            if keep_comb and uid not in held and it.flags() & Qt.ItemFlag.ItemIsUserCheckable:
+                held[uid] = it.checkState(0)
+                it.setCheckState(0, Qt.CheckState.Unchecked)
+                it.setFlags(it.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
+                it.setToolTip(0, "Kept with the contact gate (it is written on the middle hBN, over the device layers)")
+            elif not keep_comb and uid in held:
+                it.setFlags(it.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                it.setCheckState(0, held.pop(uid))
+                it.setToolTip(0, "")
+        self._held = held
+        self.pairs.setEnabled(not keep_fingers)
+        if keep_fingers:
+            self.pairs.setToolTip("The fingers are kept: their pair count is used")
+
+    def _fixed(self) -> dict:
+        out = {}
+        for key, box in self.keep_boxes.items():
+            if box.isChecked() and box.isEnabled():
+                info = self.made[key]
+                out[key] = info["array"] if key == "hall_bars" else {"polys": info["polys"], "reach": info["reach"]}
+        return out
 
     # ------------------------------------------------------------------ run
     def _movable(self) -> set:
@@ -173,7 +249,7 @@ class AutoDesignDialog(Dialog):
         self.busy.set_busy(True)
         self.state.setText("Starting …")
         self.worker = _Worker(self.spec.copy(), self.config, self.flow, self._movable(), self.twist.isChecked(),
-                              self.thorough.isChecked(), self.pairs.value() or None)
+                              self.thorough.isChecked(), self.pairs.value() or None, self._fixed())
         self.worker.progressed.connect(lambda t, f: self.state.setText(f"{int(100 * f)} % · {t}"))
         self.worker.finished_ok.connect(self._done)
         self.worker.failed.connect(self._failed)
@@ -207,17 +283,21 @@ class AutoDesignDialog(Dialog):
         self._stopped()
         self.state.setText(text)
 
-    def _done(self, cands: list) -> None:
-        self._stopped()
+    def _list_candidates(self, cands: list, current: int = 0, applied: int | None = None) -> None:
         self.cands = cands
         self.results.clear()
+        applied = current if applied is None and getattr(self, "_from_saved", False) else applied
         for k, c in enumerate(cands, 1):
-            it = QtWidgets.QTreeWidgetItem(self.results, [f"{k}. {c.summary()}"])
+            it = QtWidgets.QTreeWidgetItem(self.results, [f"{k}. {c.summary()}" + ("  · applied" if applied == k - 1 else "")])
             it.setData(0, Qt.ItemDataRole.UserRole, k - 1)
-        self.state.setText(f"{len(cands)} layout(s) found." if cands else "No layout found.")
         if cands:
-            self.results.setCurrentItem(self.results.topLevelItem(0))
+            self.results.setCurrentItem(self.results.topLevelItem(min(max(current, 0), len(cands) - 1)))
             self.apply_btn.setEnabled(True)
+
+    def _done(self, cands: list) -> None:
+        self._stopped()
+        self._list_candidates(cands)
+        self.state.setText(f"{len(cands)} layout(s) found." if cands else "No layout found.")
 
     # ------------------------------------------------------------------ preview / apply
     def _current(self) -> al.Candidate | None:
@@ -225,12 +305,29 @@ class AutoDesignDialog(Dialog):
         return self.cands[it.data(0, Qt.ItemDataRole.UserRole)] if it is not None and self.cands else None
 
     def _show_current(self) -> None:
-        """Before a run: the flakes where they are now."""
+        """Before a run: the flakes where they are now, with the metal parts of the layout applied last (user, 2026-11-21:
+        the planned positions stay visible when the window is opened again) — Stage 2's own patterns where it has
+        generated them."""
         c = self.canvas
         c.clear_all()
         for z, layer in enumerate(self.spec.layers):
             if layer.outline:
                 c.set_polygon(f"now:{layer.uid}", layer.outline, layer_color(layer, self.config), False, 100 + z, 0.10)
+        plan = ef.auto_plan(self.spec)
+        if plan is not None:
+            sources: dict = {}
+            pats = ef.layout_patterns(self.spec, self.flow, None, sources) if self.flow is not None else {}
+            for uid, polys in pats.items():
+                layer = self.spec.layer(uid)
+                if layer is not None:
+                    c.add_overlay_polys(polys, layer_color(layer, self.config), 0.5, z=150 + self.spec.layers.index(layer),
+                                        width=0.6, dash=sources.get(uid) == "plan")
+            if self.flow is None:
+                c.add_overlay_polys(ef.auto_plan_polys(plan, "hall_bar_contacts"), "#c0a060", 0.5, z=150, width=0.6, dash=True)
+                c.add_overlay_polys(ef.auto_plan_polys(plan, "contact_gate"), "#8a8f99", 0.5, z=151, width=0.6, dash=True)
+            self.state.setText(f"Applied layout: {plan.get('summary', '')}. Its planned metal parts are shown (dashed) until "
+                               "Stage 2 generates those patterns. Run again for new layouts.")
+            self.detail.setText("  ".join(plan.get("notes") or []))
         c.fit()
 
     def preview(self) -> None:
@@ -259,9 +356,9 @@ class AutoDesignDialog(Dialog):
         cand = self._current()
         if cand is None:
             return
-        moved = al.apply_candidate(self.win.spec, cand)
+        moved = al.apply_candidate(self.win.spec, cand, self.cands)
         self.win.layout_auto_applied(moved, cand)
-        self.state.setText(f"Applied: {len(moved)} flake(s) moved (Undo reverts).")
+        self.accept()                                   # user, 2026-11-21: Apply closes the window
 
     def closeEvent(self, e):  # noqa: N802 - Qt API
         if self.worker is not None and self.worker.isRunning():

@@ -229,6 +229,9 @@ class StackPanel(QtWidgets.QWidget):
                 tip = q.suggested_source or ""
                 if q.source:
                     tip = f"Value from: {q.source}" + (f" · suggestion: {tip}" if tip else "")
+                if fld == "twist_deg":
+                    tip = ("Counter-clockwise, relative to the device layer below: its traced border (as in its picture) is "
+                           "turned by this in Flake layout, the Structure tab and the auto design") + (f" · {tip}" if tip else "")
                 f.setToolTip(tip)
                 f.valueEdited.connect(lambda v, q=q: self._set_q(q, v))
                 extra = [f, label(unit, "muted")]

@@ -20,3 +20,8 @@ def poll() -> None:
     fn = getattr(_local, "fn", None)
     if fn is not None:
         fn()
+
+
+def current_check():
+    """The calling thread's check (to hand to helper threads working for it)."""
+    return getattr(_local, "fn", None)

@@ -670,7 +670,20 @@ class Canvas(QtWidgets.QGraphicsView):
             if it is not None:
                 it.set_marked(k in self.multi and len(self.multi) > 1)
 
+    def selection(self) -> list:
+        """The outlines the handles act on: the outlines chosen together (Shift-click / a box) when there are several,
+        else the selected one."""
+        if len(self.multi) > 1:
+            items = [self.polys[k] for k in sorted(self.multi) if k in self.polys]
+            items = [it for it in items if it.editable and it.isVisible() and len(it.points) >= 3]
+            if len(items) > 1:
+                return items
+        item = self.polys.get(self.active_poly) if self.active_poly else None
+        return [item] if item is not None and item.editable and item.isVisible() and len(item.points) >= 3 else []
+
     def set_active_polygon(self, key: str | None) -> None:
+        if key is not None and key not in self.multi and self.multi:
+            self.set_multi([])                         # another outline chosen alone: the group is dropped
         for k, item in self.polys.items():
             if k == key and item.handles:
                 continue                      # already active: keep its handles (and selected points)
@@ -685,8 +698,8 @@ class Canvas(QtWidgets.QGraphicsView):
         self.place_scale_handles()
         if not getattr(self, "rotate_handles", False):
             return
-        item = self.polys.get(self.active_poly) if self.active_poly else None
-        if item is None or not item.editable or not item.isVisible() or len(item.points) < 3:
+        sel = self.selection()
+        if not sel:
             for it in (self._rot_handle, self._rot_line):
                 if it is not None:
                     it.setVisible(False)
@@ -702,7 +715,7 @@ class Canvas(QtWidgets.QGraphicsView):
             self.scene().addItem(self._rot_line)
         if self._rot is not None:                     # while turning, the handle follows the pointer
             return
-        scr = [self.mapFromScene(QPointF(x, y)) for x, y in item.points]
+        scr = [self.mapFromScene(QPointF(x, y)) for it in sel for x, y in it.points]
         xs, ys = [p.x() for p in scr], [p.y() for p in scr]
         top = QtCore.QPointF((min(xs) + max(xs)) / 2, min(ys))
         handle = self.mapToScene(QtCore.QPoint(int(round(top.x())), int(round(top.y() - 26))))
@@ -723,8 +736,8 @@ class Canvas(QtWidgets.QGraphicsView):
         """Eight square handles on the selected outline's box, as seen on screen (hidden without one)."""
         if not getattr(self, "scale_handles", False):
             return
-        item = self.polys.get(self.active_poly) if self.active_poly else None
-        show = item is not None and item.editable and item.isVisible() and len(item.points) >= 3
+        sel = self.selection()
+        show = bool(sel)
         if show and (not self._scale_items or self._scale_items[0].scene() is None):
             self._scale_items = []
             for side in ScaleHandle.CURSORS:
@@ -744,7 +757,7 @@ class Canvas(QtWidgets.QGraphicsView):
                 if h.scene() is not None:
                     h.setVisible(False)
             return
-        x0, y0, x1, y1 = self._screen_box(item.points)
+        x0, y0, x1, y1 = self._screen_box([q for it in sel for q in it.points])
         inv = self.viewportTransform().inverted()[0]
         off = 10.0                                  # screen px outside the box: clear of the point handles
         for h in self._scale_items:
@@ -759,18 +772,18 @@ class Canvas(QtWidgets.QGraphicsView):
             self._scale_box.setVisible(True)
 
     def begin_scale(self, handle: ScaleHandle, pos: QPointF | None = None) -> None:
-        item = self.polys.get(self.active_poly) if self.active_poly else None
-        if item is None:
+        sel = self.selection()
+        if not sel:
             return
         t = QtGui.QTransform(self.viewportTransform())
-        box = self._screen_box(item.points)
+        box = self._screen_box([q for it in sel for q in it.points])
         g = t.map(pos if pos is not None else handle.pos())
         x0, y0, x1, y1 = box
         hx, hy = handle.side
         # where the handle was grabbed relative to the box edge it moves (it sits outside the box): no jump on grab
         grab = (g.x() - (x1 if hx > 0 else x0) if hx else 0.0, g.y() - (y1 if hy > 0 else y0) if hy else 0.0)
-        self._scl = {"item": item, "orig": list(item.points), "box": box, "side": handle.side, "t": t, "grab": grab,
-                     "sx": 1.0, "sy": 1.0}
+        self._scl = {"items": sel, "orig": [list(it.points) for it in sel], "box": box, "side": handle.side, "t": t,
+                     "grab": grab, "sx": 1.0, "sy": 1.0}
 
     def scale_to(self, pos: QPointF, keep_ratio: bool = False, about_middle: bool = False) -> None:
         r = self._scl
@@ -799,16 +812,16 @@ class Canvas(QtWidgets.QGraphicsView):
             sx = sy = max(sx, sy)
         r["sx"], r["sy"] = sx, sy
         inv = t.inverted()[0]
-        item = r["item"]
-        pts = []
-        for x, y in r["orig"]:
-            q = t.map(QPointF(x, y))
-            q2 = inv.map(QPointF(ax + (q.x() - ax) * sx, ay + (q.y() - ay) * sy))
-            pts.append((q2.x(), q2.y()))
-        item.points = pts
-        for h, (x, y) in zip(item.handles, item.points):
-            h.setPos(x, y)
-        item.setPolygon(QtGui.QPolygonF([QPointF(x, y) for x, y in item.points]))
+        for item, orig in zip(r["items"], r["orig"]):
+            pts = []
+            for x, y in orig:
+                q = t.map(QPointF(x, y))
+                q2 = inv.map(QPointF(ax + (q.x() - ax) * sx, ay + (q.y() - ay) * sy))
+                pts.append((q2.x(), q2.y()))
+            item.points = pts
+            for h, (x, y) in zip(item.handles, item.points):
+                h.setPos(x, y)
+            item.setPolygon(QtGui.QPolygonF([QPointF(x, y) for x, y in item.points]))
         self.message.emit(f"Stretched {sx * 100:.0f} % across × {sy * 100:.0f} % up–down"
                           + ("" if keep_ratio or not (hx and hy) else "  (Shift: keep proportions)")
                           + ("" if about_middle else "  (Alt: about the middle)"))
@@ -818,45 +831,65 @@ class Canvas(QtWidgets.QGraphicsView):
         if r is None:
             return
         if abs(r["sx"] - 1.0) > 1e-9 or abs(r["sy"] - 1.0) > 1e-9:
-            r["item"].commit()
+            self._commit_all(r["items"])
         self.place_rotate_handle()
+
+    def _commit_all(self, items) -> None:
+        """Each changed outline committed (``polygonEdited`` per outline); the group stays chosen."""
+        keys = [it.key for it in items]
+        group = len(items) > 1
+        for it in items:
+            it.commit()
+        if group:
+            self.set_multi([k for k in keys if k in self.polys])
+            self.place_rotate_handle()
 
     def scale_active(self, sx: float, sy: float | None = None) -> bool:
         """Stretch the selected outline by ``sx`` across and ``sy`` up–down (as seen on screen; ``sy``
         defaults to ``sx``) about its middle, and commit it."""
-        item = self.polys.get(self.active_poly) if self.active_poly else None
-        if item is None or not item.editable:
+        sel = self.selection()
+        if not sel:
             return False
         sy = sx if sy is None else sy
         t = QtGui.QTransform(self.viewportTransform())
-        x0, y0, x1, y1 = self._screen_box(item.points)
+        x0, y0, x1, y1 = self._screen_box([q for it in sel for q in it.points])
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         inv = t.inverted()[0]
-        pts = []
-        for x, y in item.points:
-            q = t.map(QPointF(x, y))
-            q2 = inv.map(QPointF(cx + (q.x() - cx) * sx, cy + (q.y() - cy) * sy))
-            pts.append((q2.x(), q2.y()))
-        item.points = pts
-        item._refresh()
-        item.set_active(True)
-        item.commit()
+        for item in sel:
+            pts = []
+            for x, y in item.points:
+                q = t.map(QPointF(x, y))
+                q2 = inv.map(QPointF(cx + (q.x() - cx) * sx, cy + (q.y() - cy) * sy))
+                pts.append((q2.x(), q2.y()))
+            item.points = pts
+            item._refresh()
+            if len(sel) == 1:
+                item.set_active(True)
+        self._commit_all(sel)
         self.place_rotate_handle()
         return True
 
     def begin_rotate(self, pos: QPointF) -> None:
-        item = self.polys.get(self.active_poly) if self.active_poly else None
-        if item is None:
+        sel = self.selection()
+        if not sel:
             return
-        pts = np.asarray(item.points, float)
-        x, y = pts[:, 0], pts[:, 1]
-        a = x * np.roll(y, -1) - np.roll(x, -1) * y
-        A = a.sum() / 2
-        if abs(A) > 1e-12:                            # turn about the area centroid
-            c = (float(((x + np.roll(x, -1)) * a).sum() / (6 * A)), float(((y + np.roll(y, -1)) * a).sum() / (6 * A)))
+        tot, sx_, sy_ = 0.0, 0.0, 0.0                 # turn about the area centroid (of all the chosen outlines together)
+        for item in sel:
+            pts = np.asarray(item.points, float)
+            x, y = pts[:, 0], pts[:, 1]
+            a = x * np.roll(y, -1) - np.roll(x, -1) * y
+            A = a.sum() / 2
+            if abs(A) > 1e-12:
+                tot += abs(A)
+                sx_ += abs(A) * float(((x + np.roll(x, -1)) * a).sum() / (6 * A))
+                sy_ += abs(A) * float(((y + np.roll(y, -1)) * a).sum() / (6 * A))
+        if tot > 1e-12:
+            c = (sx_ / tot, sy_ / tot)
         else:
-            c = (float(x.mean()), float(y.mean()))
-        self._rot = {"item": item, "orig": list(item.points), "c": c, "a0": math.atan2(pos.y() - c[1], pos.x() - c[0]), "deg": 0.0}
+            allp = np.asarray([q for it in sel for q in it.points], float)
+            c = (float(allp[:, 0].mean()), float(allp[:, 1].mean()))
+        self._rot = {"items": sel, "orig": [list(it.points) for it in sel], "c": c,
+                     "a0": math.atan2(pos.y() - c[1], pos.x() - c[0]), "deg": 0.0}
 
     def rotate_to(self, pos: QPointF, snap: bool = False) -> None:
         r = self._rot
@@ -870,11 +903,11 @@ class Canvas(QtWidgets.QGraphicsView):
         r["deg"] = deg
         t = math.radians(deg)
         c, s = math.cos(t), math.sin(t)
-        item = r["item"]
-        item.points = [(cx + c * (x - cx) - s * (y - cy), cy + s * (x - cx) + c * (y - cy)) for x, y in r["orig"]]
-        for h, (x, y) in zip(item.handles, item.points):
-            h.setPos(x, y)
-        item.setPolygon(QtGui.QPolygonF([QPointF(x, y) for x, y in item.points]))
+        for item, orig in zip(r["items"], r["orig"]):
+            item.points = [(cx + c * (x - cx) - s * (y - cy), cy + s * (x - cx) + c * (y - cy)) for x, y in orig]
+            for h, (x, y) in zip(item.handles, item.points):
+                h.setPos(x, y)
+            item.setPolygon(QtGui.QPolygonF([QPointF(x, y) for x, y in item.points]))
         if self._rot_handle is not None:
             self._rot_handle.setPos(pos)
             self._rot_line.setLine(QtCore.QLineF(QPointF(cx, cy), pos))
@@ -885,13 +918,13 @@ class Canvas(QtWidgets.QGraphicsView):
         if r is None:
             return
         if abs(r["deg"]) > 1e-9:
-            r["item"].commit()
+            self._commit_all(r["items"])
         self.place_rotate_handle()
 
     def rotate_active(self, deg: float) -> bool:
-        """Turn the selected outline by ``deg`` (counter-clockwise) about its middle and commit it."""
-        item = self.polys.get(self.active_poly) if self.active_poly else None
-        if item is None or not item.editable:
+        """Turn the selected outline (or the outlines chosen together) by ``deg`` (counter-clockwise) about the middle and
+        commit it."""
+        if not self.selection():
             return False
         self.begin_rotate(QPointF(0, 0))
         cx, cy = self._rot["c"]
@@ -1244,6 +1277,29 @@ class Canvas(QtWidgets.QGraphicsView):
             return
         if self.tool == "pointer" and not on_handle:
             item = self._edge_hit(pos)
+            shift = bool(e.modifiers() & (Qt.KeyboardModifier.ShiftModifier | Qt.KeyboardModifier.ControlModifier
+                                          | Qt.KeyboardModifier.MetaModifier))
+            if item is not None and shift and item.editable:
+                # Shift / Ctrl / ⌘-click on a line (user, 2026-11-22, as in PowerPoint): add it to the outlines chosen
+                # together, or take it out; dragging one of them then moves all, the handles turn / stretch all
+                keys = set(self.multi) or ({self.active_poly} if self.active_poly in self.polys else set())
+                keys ^= {item.key}
+                self.set_multi(keys)
+                if item.key in keys:
+                    self.set_active_polygon(item.key)
+                    self.polygonSelected.emit(item.key)
+                elif keys:
+                    self.set_active_polygon(sorted(keys)[0])
+                else:
+                    self.set_active_polygon(None)
+                self.outlinesSelected.emit(sorted(self.multi))
+                self.place_rotate_handle()
+                if self.drag_outlines and item.key in self.multi and len(self.multi) > 1:
+                    self._group_move = [self.polys[k] for k in self.multi if k in self.polys]
+                    for it in self._group_move:
+                        it.begin_move(pos)
+                    self.viewport().setCursor(Qt.CursorShape.ClosedHandCursor)
+                return
             if item is not None and not self.drag_outlines:   # on an outline's line: select it
                 if self.active_poly != item.key:
                     self.set_active_polygon(item.key)
@@ -1415,6 +1471,7 @@ class Canvas(QtWidgets.QGraphicsView):
                 # a plain click away from every outline: nothing stays selected
                 if self._edge_hit(self.mapToScene(start)) is None:
                     self.polys[self.active_poly].select_only([])
+                    self.set_multi([])                 # the outlines chosen together too
                     self.set_active_polygon(None)
                     self.polygonSelected.emit("")
             self._pan, self._pan_start = None, None

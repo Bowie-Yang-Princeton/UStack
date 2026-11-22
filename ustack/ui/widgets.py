@@ -520,3 +520,17 @@ def boxed_cells(table: QtWidgets.QAbstractItemView) -> QtWidgets.QAbstractItemVi
                           | QtWidgets.QAbstractItemView.EditTrigger.EditKeyPressed
                           | QtWidgets.QAbstractItemView.EditTrigger.AnyKeyPressed)
     return table
+
+
+def help_button(title: str, text: str):
+    """A small circled question mark next to a field (user, 2026-11-22); clicking it says what the field is."""
+    from .style import IconButton
+    b = IconButton("help", "What is this?", size=22, icon_size=16)
+    b.help_title, b.help_text = title, text
+    b.clicked.connect(lambda: _show_help(b))
+    return b
+
+
+def _show_help(b) -> None:
+    import sys
+    sys.modules[__name__].message(b.window(), b.help_title, b.help_text)

@@ -25,11 +25,11 @@ presets; only the position, angle and count are chosen.
 Contact gate (:func:`contact_gate_comb`, :func:`fit_contact_gate`): one tooth per gated finger, the
 finger's width, from the tip outward ``cg.tooth_length_um``, joined behind the teeth by a bus
 ``cg.bus_width_um`` wide (as in the lab's drawings) that leads out sideways up to
-``cg.bus_extension_um`` beyond the outer tooth, where an electrode lands. Without source / drain
-layers in the stack, the outer finger(s) of each column at opposite ends are left ungated (source and
-drain) and each bus leads away from them (``CG_LAYOUTS``); the lead is shortened, the reversed layout
-used, or one more finger per column left ungated, so the comb lies ``cg.hbn_margin_um`` inside the
-hBN under it (the user's own fix on Device 2026-11-16). :func:`gated_fingers` /
+``cg.bus_extension_um`` beyond the outer tooth, where an electrode lands. Every finger is gated, the
+source / drain ones too (user, 2026-11-22: ``leave_sd=False`` from the workflow); the lead is shortened
+or the reversed layout used so the comb lies ``cg.hbn_margin_um`` inside the hBN under it. With
+``leave_sd`` (the former rule) the outer finger(s) of each column at opposite ends are left ungated and
+each bus leads away from them (``CG_LAYOUTS``), one more per column when a tooth would leave the hBN. :func:`gated_fingers` /
 :func:`cg_terminals` read a contact gate as it is (also when drawn by hand).
 
 Gate contacts (:func:`gate_contacts`): a square of ``electrodes.bg_contact_um`` on the gate flake,
@@ -610,9 +610,30 @@ def tmd_keepout(tmd_polys: list[Poly] | None, gap: float | None) -> kdb.Region |
     return reg.dup()
 
 
+def _lead_side_cost(arr: FingerArray, lay: dict, away: kdb.Region) -> float:
+    """How much of ``away`` (e.g. the top gate, grown) lies where this layout's bus leads go: a box beyond each column's
+    outer tooth, on that column's side, toward the lead's direction."""
+    p = arr.params
+    hs = arr.span / 2
+    cost = 0.0
+    for column, sgn in (("top", 1.0), ("bottom", -1.0)):
+        d = float(lay["dirs"].get(column, 1.0))
+        u0, u1 = sorted((d * hs, d * (hs + LEAD_PROBE_UM)))
+        v0, v1 = sorted((sgn * p.gap / 2, sgn * (p.gap / 2 + LEAD_PROBE_UM)))
+        cost += geo.area(geo.region(arr.to_chip([(u0, v0), (u1, v0), (u1, v1), (u0, v1)])) & away)
+    return cost
+
+
+#: Where the bus leads go, probed this far past the outer tooth (program choice; ``fit_contact_gate(away=)``).
+LEAD_PROBE_UM = 20.0
+#: Both bus leads to the same side: no longer offered (2026-11-22: they ran the leads along the bottom gate; the lab's
+#: layouts lead the two buses opposite ways). Kept for scripts.
+SAME_SIDE_LAYOUTS = ({"skip": {}, "dirs": {"top": 1.0, "bottom": 1.0}}, {"skip": {}, "dirs": {"top": -1.0, "bottom": -1.0}})
+
+
 def fit_contact_gate(arr: FingerArray, hbn_polys: list[Poly] | None, margin: float | None, leave_sd: bool,
                      step: float = 0.1, min_width: float | None = None, keepout: kdb.Region | None = None,
-                     avoid: kdb.Region | None = None) -> tuple[dict, list[str]]:
+                     avoid: kdb.Region | None = None, away: kdb.Region | None = None) -> tuple[dict, list[str]]:
     """Choose the contact-gate layout, as the user did by hand on Device 2026-11-16: the bus directions
     from ``CG_LAYOUTS`` (in order) with one source / drain finger left ungated at opposite ends of the
     two columns (``leave_sd``); when a comb does not lie ``margin`` inside the hBN under it
@@ -626,6 +647,10 @@ def fit_contact_gate(arr: FingerArray, hbn_polys: list[Poly] | None, margin: flo
     ValueError when nothing fits."""
     p = arr.params
     layouts = CG_LAYOUTS if leave_sd else ({"skip": {}, "dirs": {"top": 1.0, "bottom": -1.0}}, {"skip": {}, "dirs": {"top": -1.0, "bottom": 1.0}})
+    if away is not None and not away.is_empty() and not leave_sd:
+        # the leads kept away from ``away`` (the top gate: their electrodes must not land under it or its hBN): the
+        # layouts whose leads go where it is not first, both leads to one side among them (stable: the lab's order on ties)
+        layouts = tuple(sorted(layouts, key=lambda lay: round(_lead_side_cost(arr, lay, away), 1)))
     counts = range(1, min(CG_MAX_SKIP, arr.n - 1) + 1) if leave_sd else (0,)
     if not hbn_polys:
         lay = layouts[0]
@@ -689,7 +714,8 @@ def fit_contact_gate(arr: FingerArray, hbn_polys: list[Poly] | None, margin: flo
                 return ({"skip": dict(lay["skip"]), "dirs": dict(lay["dirs"]), "extension": ext, "n_skip": n_skip,
                          "trim": {c: bool(t) for c, t in trims.items()}, "margin": margin, "tooth": teeth}, notes)
     raise ValueError(f"The contact gate does not fit {margin or 0:g} µm inside the hBN under it, with leads down to "
-                     f"{p.electrode_width:g} µm and up to {max(counts)} ungated fingers per column ({len(fails)} layouts tried). "
+                     f"{p.electrode_width:g} µm" + (f" and up to {max(counts)} ungated fingers per column" if leave_sd else
+                                                    ", every finger gated") + f" ({len(fails)} layouts tried). "
                      "UStack does not change the comb's dimensions: draw it (Draw contact gate…), or adjust the presets or the hBN outline.")
 
 
