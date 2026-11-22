@@ -55,6 +55,7 @@ import klayout.db as kdb
 import numpy as np
 
 from . import geometry as geo
+from .cancel import poll
 from .config import LabConfig
 from .hallbar import lead_path
 
@@ -305,6 +306,7 @@ def _longest_runs(valid: np.ndarray, dt: np.ndarray):
 
 def _fit_at_angle(region_polys: list[Poly], centre: tuple[float, float], angle: float, p: FingerParams):
     """Best (n, margin, centre_chip) for one angle."""
+    poll()
     a = math.radians(angle)
     c, s = math.cos(a), math.sin(a)
     loc = [[(c * (x - centre[0]) + s * (y - centre[1]), -s * (x - centre[0]) + c * (y - centre[1])) for x, y in poly]
@@ -591,11 +593,21 @@ def contact_gate_comb(arr: FingerArray, columns: tuple[str, ...] = ("top", "bott
 CG_MAX_SKIP = 3
 
 
+_KEEPOUT_CACHE: dict = {}
+
+
 def tmd_keepout(tmd_polys: list[Poly] | None, gap: float | None) -> kdb.Region | None:
-    """Where the contact-gate bus may not be: the TMD (device layers) grown by ``cg.bus_tmd_gap_um``."""
+    """Where the contact-gate bus may not be: the TMD (device layers) grown by ``cg.bus_tmd_gap_um``. Memoized (the auto
+    design asks for the same outlines many times); a copy is returned."""
     if not tmd_polys or gap is None:
         return None
-    return geo.grown_round(geo.regions(tmd_polys).merged(), float(gap))
+    key = (tuple(tuple((round(float(x), 4), round(float(y), 4)) for x, y in q) for q in tmd_polys), round(float(gap), 6))
+    reg = _KEEPOUT_CACHE.get(key)
+    if reg is None:
+        if len(_KEEPOUT_CACHE) > 256:
+            _KEEPOUT_CACHE.clear()
+        reg = _KEEPOUT_CACHE[key] = geo.grown_round(geo.regions(tmd_polys).merged(), float(gap))
+    return reg.dup()
 
 
 def fit_contact_gate(arr: FingerArray, hbn_polys: list[Poly] | None, margin: float | None, leave_sd: bool,
@@ -644,6 +656,7 @@ def fit_contact_gate(arr: FingerArray, hbn_polys: list[Poly] | None, margin: flo
 
     for n_skip in counts:
         for n_lay, lay in enumerate(layouts):
+            poll()
             ext, trims, teeth, ok = {}, {}, {}, True
             for column in ("top", "bottom"):
                 best = None

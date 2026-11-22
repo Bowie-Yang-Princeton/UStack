@@ -841,7 +841,7 @@ def test_one_traced_border_everywhere_core():
     assert np.allclose(st2.outlines["TMD1"][0][:3], before[:3], atol=1e-9)
 
 
-def test_borders_sync_layout_canvas_and_tabs(cfg):
+def test_borders_sync_layout_canvas_and_tabs(cfg, tmp_path):
     """Stage 2 ↔ Flake images ↔ Flake layout share one border; the Flake layout shows borders only,
     moves and turns them; a click away deselects; side and centre tabs are independent."""
     import numpy as np
@@ -881,22 +881,26 @@ def test_borders_sync_layout_canvas_and_tabs(cfg):
     assert spec.layer("TMD2").image["x"] == pytest.approx(5.0) and spec.layer("TMD2").image["placed"]
     w.flake_panel.edited("TMD1", [list(q) for q in spec.layer("TMD1").outline])     # unchanged shape: nothing moves
     assert np.allclose(p.step.outlines["TMD1"][0], chip_before)
-    # select by clicking the line, turn with the slider: about its middle, the image turns too
+    # select by clicking the line, turn it with the round rotate handle (the turn slider is gone, 2026-11-21): about its
+    # middle, the image turns too
     c.fit()
     app.processEvents()
     x0, y0 = spec.layer("TMD2").outline[0]
     x1, y1 = spec.layer("TMD2").outline[1]
     QTest.mouseClick(c.viewport(), Qt.MouseButton.LeftButton, pos=c.mapFromScene(QtCore.QPointF((x0 + x1) / 2, (y0 + y1) / 2)))
-    assert c.active_poly == "outline:TMD2" and w.layout_turn.isEnabled()
+    assert c.active_poly == "outline:TMD2" and c.rotate_handles and c._rot_handle is not None and c._rot_handle.isVisible()
+    assert not hasattr(w, "layout_turn")
     mid = geo.centroid(spec.layer("TMD2").outline)
-    w.layout_turn.setValue(30)
-    assert spec.layer("TMD2").image["angle_deg"] == pytest.approx(30.0)
+    assert c.rotate_active(30.0)
+    assert spec.layer("TMD2").image["angle_deg"] == pytest.approx(30.0, abs=1e-6) and spec.layer("TMD2").image["placed"]
     assert geo.centroid(spec.layer("TMD2").outline) == pytest.approx(mid)
-    assert w.layout_turn_text.text() == "30°"
     # a click on nothing deselects
     far = c.mapFromScene(QtCore.QPointF(mid[0] + 500, mid[1] + 500))
     QTest.mouseClick(c.viewport(), Qt.MouseButton.LeftButton, pos=far)
-    assert c.active_poly is None and not w.layout_turn.isEnabled()
+    assert c.active_poly is None and not c._rot_handle.isVisible()
+    # Export to image: what the canvas shows, as a JPG (the device's folder by default; here the path given)
+    out = w.save_layout_image(tmp_path / "layout.jpg")
+    assert out is not None and out.is_file() and out.read_bytes()[:2] == b"\xff\xd8"           # a JPEG
     # the same on the EBL canvas
     w.center_tabs.setCurrentWidget(w.ebl_page)
     app.processEvents()
@@ -1263,7 +1267,7 @@ def test_layers_found_later_replace_the_plan_at_the_hall_bar_step(cfg):
     assert not ef.adopt_identified(spec, flow)                                     # nothing new
 
 
-def test_check_window_and_reopening_shows_the_canvas_as_saved(cfg):
+def test_check_window_and_reopening_shows_the_canvas_as_saved(cfg, monkeypatch):
     apply_answers(cfg, {"preset:electrodes.pad_landing_um": 10.0, "preset:electrodes.flake_clearance_um": 1.0})              # TEST VALUE (no dialog in a test)
     import numpy as np
     import cv2
@@ -1302,7 +1306,11 @@ def test_check_window_and_reopening_shows_the_canvas_as_saved(cfg):
     p.set_layer_visible("bp:pads", False)
     w.ebl_canvas.set_view_rotation(15.0)
     v = w.ebl_canvas.view_state()
-    w.save()
+    from ustack.ui import main_window as mw
+    asked = []
+    monkeypatch.setattr(mw, "prompt_text", lambda parent, title, prompt, text="", ok="": asked.append(text) or text)
+    w.save()                                               # the first Save asks the device's name (offered: its name)
+    assert asked == [w.spec.name]
     path = w.spec_path
     w.dirty = False
     w2 = MainWindow(cfg)

@@ -1,0 +1,1490 @@
+{
+  "schema": "ustack.device/1",
+  "id": "884f1c08535b",
+  "name": "Device 2026-11-21",
+  "family": "xu_tmd",
+  "template_id": "xu_tmd",
+  "description": "Xiaodong Xu (UW) structure: the bottom gate (graphite + hBN) is stacked first, Pt Hall-bar contacts are written on it, the TMD is dropped onto the Pt together with a thin hBN that carries the contact gates, and an hBN/graphite/hBN top gate is transferred last.",
+  "created": "2026-11-21T21:56:17",
+  "modified": "2026-11-21T22:40:28",
+  "layers_order": "bottom_to_top",
+  "layers": [
+    {
+      "uid": "S0",
+      "name": "Substrate",
+      "material": "SiO2_285_resistive_Si",
+      "function": "substrate",
+      "thickness_nm": {
+        "value": 285.0,
+        "source": "material"
+      },
+      "pieces": 1,
+      "notes": "Choose 285 nm SiO2 on doped Si (usable as a global back gate) or on resistive Si."
+    },
+    {
+      "uid": "BG",
+      "name": "Graphite bottom gate",
+      "material": "graphite",
+      "function": "bottom_gate",
+      "thickness_nm": {
+        "value": 3.0,
+        "source": "auto",
+        "note": "lab design thickness for graphite:bottom_gate"
+      },
+      "width_um": {
+        "value": 8.0,
+        "source": "auto",
+        "note": "probe span + gate margin 2 µm + extra (BG larger than TG)"
+      },
+      "length_um": {
+        "value": 11.2,
+        "source": "auto",
+        "note": "probe span + gate margin 2 µm + extra (BG larger than TG)"
+      },
+      "pieces": 1,
+      "notes": "Few-layer graphite; thickness not stated in the papers.",
+      "image": {
+        "path": "/Users/bowieyang/Desktop/Princeton/Uri Lab/UStack/library/devices/Device_2026-11-21/images/BG_Stack 1 graphite back gate.png",
+        "um_per_px": 0.08453097345132743,
+        "angle_deg": 55.0,
+        "x": -55.87781884272814,
+        "y": -25.346338544822927,
+        "opacity": 0.6,
+        "visible": true,
+        "mirror": false,
+        "objective": "100x",
+        "trace": {
+          "how": "auto",
+          "mode": "flake",
+          "seed_px": [
+            650.5,
+            392.0
+          ]
+        },
+        "placed": true
+      },
+      "outline": [
+        [
+          -29.18060687979311,
+          -20.317408530533815
+        ],
+        [
+          -25.380449107974698,
+          -20.354618902581166
+        ],
+        [
+          -18.60857386188612,
+          -16.46002820824469
+        ],
+        [
+          -8.168640857913964,
+          -12.947431918095116
+        ],
+        [
+          -0.37748035197341423,
+          -12.280920828035502
+        ],
+        [
+          26.393543395897147,
+          -4.024063449259314
+        ],
+        [
+          33.15773298391257,
+          -2.6384595809463924
+        ],
+        [
+          75.24733443516396,
+          9.541143048032218
+        ],
+        [
+          85.33479774892336,
+          10.676852526093077
+        ],
+        [
+          94.11800239758878,
+          23.22056873789267
+        ],
+        [
+          84.46389725789155,
+          25.82627208328144
+        ],
+        [
+          71.11205740654661,
+          26.429701842274874
+        ],
+        [
+          53.81258845330205,
+          21.70758428912892
+        ],
+        [
+          5.685728090151592,
+          12.771432580573531
+        ],
+        [
+          -12.207658086535488,
+          10.323626539555645
+        ],
+        [
+          -21.473605561870777,
+          8.17540402097716
+        ],
+        [
+          -23.373912807464684,
+          6.5543636398196625
+        ]
+      ]
+    },
+    {
+      "uid": "BBN",
+      "name": "Bottom hBN",
+      "material": "hBN",
+      "function": "bottom_gate_dielectric",
+      "thickness_nm": {
+        "value": 15.0,
+        "source": "auto",
+        "note": "lab design thickness for hBN:bottom_gate_dielectric"
+      },
+      "width_um": {
+        "value": 12.4,
+        "source": "auto",
+        "note": "larger than the middle hBN and the TMD (Xu rule)"
+      },
+      "length_um": {
+        "value": 14.8,
+        "source": "auto",
+        "note": "larger than the middle hBN and the TMD (Xu rule)"
+      },
+      "pieces": 1,
+      "role": "bottom_hbn",
+      "notes": "Lab rule: larger than the middle hBN and the TMD (the Pt contacts are written on it).",
+      "image": {
+        "path": "/Users/bowieyang/Desktop/Princeton/Uri Lab/UStack/library/devices/Device_2026-11-21/images/BBN_Stack 1 Bottom hBN.png",
+        "um_per_px": 0.08453097345132743,
+        "angle_deg": 145.0,
+        "x": 30.39511945771153,
+        "y": -75.09355087124814,
+        "opacity": 0.6,
+        "visible": true,
+        "mirror": false,
+        "objective": "100x",
+        "trace": {
+          "how": "auto",
+          "mode": "flake",
+          "seed_px": [
+            967.2,
+            399.4
+          ]
+        },
+        "placed": true
+      },
+      "outline": [
+        [
+          39.607193657951846,
+          -38.36237072148618
+        ],
+        [
+          41.089361805840156,
+          -36.5578665565186
+        ],
+        [
+          38.013168485548846,
+          -0.5145798333478684
+        ],
+        [
+          38.85698009924347,
+          0.5343823802680836
+        ],
+        [
+          37.88137295119359,
+          1.3268302240874652
+        ],
+        [
+          36.28521642173329,
+          23.871262485201548
+        ],
+        [
+          36.74794706997984,
+          27.810749209658603
+        ],
+        [
+          37.70201964170829,
+          30.42231133564286
+        ],
+        [
+          39.807781966803155,
+          32.33677197906465
+        ],
+        [
+          39.7053589066323,
+          34.376255937507395
+        ],
+        [
+          37.21128667738561,
+          36.122624113265424
+        ],
+        [
+          36.85158804846915,
+          34.516041609515426
+        ],
+        [
+          21.74736900098096,
+          42.14047980590045
+        ],
+        [
+          8.917004746251418,
+          47.0795440913657
+        ],
+        [
+          -3.1495229398941014,
+          58.26162684781067
+        ],
+        [
+          -16.044490923587908,
+          73.41272104268688
+        ],
+        [
+          -21.03263538208129,
+          76.90545739420293
+        ],
+        [
+          -28.664454756959866,
+          61.478445610266036
+        ],
+        [
+          -51.832103047118096,
+          9.812661278577734
+        ],
+        [
+          -53.76193500668623,
+          6.900449951625408
+        ],
+        [
+          -53.8941872604109,
+          5.462568874698414
+        ],
+        [
+          -52.676675859761765,
+          3.298213841024562
+        ],
+        [
+          -52.47198197920985,
+          -1.8738511206483448
+        ],
+        [
+          -53.46973266274037,
+          -2.0497814861751023
+        ],
+        [
+          -54.7166165375739,
+          -0.08350035350864182
+        ],
+        [
+          -56.30166446500248,
+          -3.127811694395832
+        ],
+        [
+          -54.70246313974603,
+          -3.810303059760998
+        ],
+        [
+          -56.04515009520592,
+          -4.947230456140323
+        ],
+        [
+          -54.37274594417319,
+          -6.774182636168181
+        ],
+        [
+          -52.87688111782645,
+          -11.97577231181529
+        ],
+        [
+          -51.79101301174275,
+          -11.205620243266358
+        ],
+        [
+          -51.05807131524117,
+          -16.091646121168505
+        ],
+        [
+          -49.774433787729706,
+          -17.537060616378856
+        ],
+        [
+          -45.49769644941645,
+          -19.54778105979642
+        ],
+        [
+          -38.29337646800455,
+          -18.470359810734923
+        ],
+        [
+          -36.298179580523126,
+          -20.30469316925632
+        ],
+        [
+          -26.270070174291696,
+          -23.937519672360025
+        ],
+        [
+          -21.231170905082294,
+          -31.729289137459787
+        ],
+        [
+          -20.769658175154202,
+          -36.5345787713023
+        ],
+        [
+          -17.872513684768595,
+          -41.29619029334274
+        ],
+        [
+          -7.089319046554951,
+          -48.846664465002455
+        ],
+        [
+          27.04704045147733,
+          -42.24881903838011
+        ]
+      ]
+    },
+    {
+      "uid": "PT",
+      "name": "Pt Hall-bar contacts",
+      "material": "Pt/Ti",
+      "function": "hall_bar_contacts",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Ti",
+          "thickness_nm": {
+            "value": 5.0,
+            "source": "auto",
+            "note": "lab design thickness for Pt/Ti:hall_bar_contacts:Ti"
+          }
+        },
+        {
+          "metal": "Pt",
+          "thickness_nm": {
+            "value": 25.0,
+            "source": "auto",
+            "suggested": 8.0,
+            "suggested_source": "H. Park et al., arXiv:2406.09591 (2024), Methods",
+            "note": "lab design thickness for Pt/Ti:hall_bar_contacts:Pt"
+          }
+        }
+      ],
+      "role": "prepattern_contacts",
+      "notes": "Lab metal list has Ti/Pt; set the Ti thickness (0 if none).",
+      "literature": "Pt 8 nm by e-beam evaporation on the BG stack, no adhesion layer stated; contact-mode AFM clean, Pt RMS < 300 pm (Park 2024)."
+    },
+    {
+      "uid": "TMD1",
+      "name": "WSe2 (half 1)",
+      "material": "WSe2",
+      "function": "device_layer",
+      "layer_count": {
+        "value": 1.0,
+        "source": "user",
+        "suggested": 1,
+        "suggested_source": "monolayer, tear/cut-and-stack"
+      },
+      "width_um": {
+        "value": 7.2,
+        "source": "auto",
+        "note": "Hall-bar footprint"
+      },
+      "length_um": {
+        "value": 9.6,
+        "source": "auto",
+        "note": "Hall-bar footprint"
+      },
+      "pieces": 2,
+      "role": "tmd",
+      "notes": "One monolayer cut in half with an AFM tip; this is the first half.",
+      "literature": "Xu group: MoTe2 monolayer cut with an AFM tip in an Ar glovebox (Park 2023/2024).",
+      "image": {
+        "path": "/Users/bowieyang/Desktop/Princeton/Uri Lab/UStack/library/devices/Device_2026-11-21/images/TMD1_WSe2 Stack 1 cutted.png",
+        "um_per_px": 0.08453097345132743,
+        "angle_deg": 0.0,
+        "x": -78.65304428571429,
+        "y": 47.05724571428571,
+        "opacity": 0.6,
+        "visible": true,
+        "mirror": false,
+        "objective": "100x",
+        "trace": {
+          "how": "auto",
+          "mode": "flake",
+          "seed_px": [
+            939.7,
+            577.4
+          ]
+        }
+      },
+      "outline": [
+        [
+          9.016405714285707,
+          5.864245714285714
+        ],
+        [
+          8.747755714285717,
+          6.043345714285712
+        ],
+        [
+          6.240355714285715,
+          6.043345714285712
+        ],
+        [
+          4.897105714285714,
+          5.7746957142857145
+        ],
+        [
+          3.8225057142857173,
+          5.7746957142857145
+        ],
+        [
+          2.927005714285717,
+          6.401545714285714
+        ],
+        [
+          2.747905714285719,
+          7.117945714285716
+        ],
+        [
+          2.1210557142857107,
+          7.117945714285716
+        ],
+        [
+          1.6733057142857115,
+          7.386595714285711
+        ],
+        [
+          0.7778057142857113,
+          7.386595714285711
+        ],
+        [
+          -0.2967942857142871,
+          7.117945714285716
+        ],
+        [
+          -0.2967942857142871,
+          6.043345714285712
+        ],
+        [
+          -0.834094285714281,
+          5.7746957142857145
+        ],
+        [
+          -12.296494285714282,
+          4.162795714285712
+        ],
+        [
+          -13.281544285714286,
+          3.894145714285711
+        ],
+        [
+          -13.191994285714284,
+          2.8195457142857183
+        ],
+        [
+          -12.744244285714283,
+          2.282245714285714
+        ],
+        [
+          -12.654694285714289,
+          -5.150404285714288
+        ],
+        [
+          -12.386044285714286,
+          -6.314554285714289
+        ],
+        [
+          -12.296494285714282,
+          -9.627904285714287
+        ],
+        [
+          -12.117394285714283,
+          -9.986104285714283
+        ],
+        [
+          -12.027844285714291,
+          -11.150254285714285
+        ],
+        [
+          -10.505494285714283,
+          -11.150254285714285
+        ],
+        [
+          -9.968194285714288,
+          -10.971154285714288
+        ],
+        [
+          5.7030557142857115,
+          -8.732404285714287
+        ],
+        [
+          6.509005714285716,
+          -8.732404285714287
+        ],
+        [
+          7.762705714285713,
+          -8.374204285714281
+        ],
+        [
+          7.94180571428572,
+          -8.195104285714283
+        ],
+        [
+          8.83730571428572,
+          -5.687704285714281
+        ],
+        [
+          9.105955714285713,
+          -3.6280542857142892
+        ],
+        [
+          9.016405714285707,
+          -1.9266042857142835
+        ],
+        [
+          9.285055714285718,
+          0.043495714285714415
+        ],
+        [
+          9.285055714285718,
+          3.1777457142857144
+        ],
+        [
+          9.105955714285713,
+          4.073245714285715
+        ],
+        [
+          9.374605714285703,
+          5.326945714285715
+        ]
+      ]
+    },
+    {
+      "uid": "TMD2",
+      "name": "WSe2 (half 2, twisted)",
+      "material": "WSe2",
+      "function": "device_layer",
+      "layer_count": {
+        "value": 1.0,
+        "source": "user",
+        "suggested": 1,
+        "suggested_source": "monolayer"
+      },
+      "width_um": {
+        "value": 7.2,
+        "source": "auto",
+        "note": "Hall-bar footprint"
+      },
+      "length_um": {
+        "value": 9.6,
+        "source": "auto",
+        "note": "Hall-bar footprint"
+      },
+      "twist_deg": {
+        "value": 4.0,
+        "source": "user"
+      },
+      "pieces": 1,
+      "role": "tmd",
+      "notes": "Second half, rotated by the twist angle.",
+      "image": {
+        "path": "/Users/bowieyang/Desktop/Princeton/Uri Lab/UStack/library/devices/Device_2026-11-21/images/TMD2_WSe2 Stack 1 cutted.png",
+        "um_per_px": 0.08453097345132743,
+        "angle_deg": 0.0,
+        "x": -54.49009999999999,
+        "y": 52.5051,
+        "opacity": 0.6,
+        "visible": true,
+        "mirror": false,
+        "objective": "100x",
+        "trace": {
+          "how": "auto",
+          "mode": "flake",
+          "seed_px": [
+            667.4,
+            620.8
+          ]
+        },
+        "placed": true
+      },
+      "outline": [
+        [
+          8.463550000000007,
+          8.625599999999999
+        ],
+        [
+          7.747150000000005,
+          8.983799999999995
+        ],
+        [
+          1.4786500000000053,
+          7.909199999999997
+        ],
+        [
+          -2.3719999999999963,
+          6.386849999999999
+        ],
+        [
+          -4.610749999999996,
+          5.8495499999999945
+        ],
+        [
+          -5.59579999999999,
+          5.312250000000001
+        ],
+        [
+          -7.207699999999992,
+          5.043599999999999
+        ],
+        [
+          -8.103199999999994,
+          4.506299999999995
+        ],
+        [
+          -8.730049999999991,
+          3.8794499999999967
+        ],
+        [
+          -10.073299999999989,
+          3.52125
+        ],
+        [
+          -10.879249999999992,
+          2.9839499999999965
+        ],
+        [
+          -13.297099999999993,
+          0.2974499999999969
+        ],
+        [
+          -14.103049999999996,
+          -0.1503000000000032
+        ],
+        [
+          -15.446299999999994,
+          -1.403999999999999
+        ],
+        [
+          -18.132799999999996,
+          -8.030700000000003
+        ],
+        [
+          -19.028299999999994,
+          -9.642599999999998
+        ],
+        [
+          -19.655149999999992,
+          -10.358999999999998
+        ],
+        [
+          -20.281999999999996,
+          -11.791800000000002
+        ],
+        [
+          -20.281999999999996,
+          -12.149999999999999
+        ],
+        [
+          -19.38649999999999,
+          -12.149999999999999
+        ],
+        [
+          -18.132799999999996,
+          -11.433599999999998
+        ],
+        [
+          -17.23729999999999,
+          -11.2545
+        ],
+        [
+          -13.92394999999999,
+          -9.194849999999995
+        ],
+        [
+          -7.565899999999999,
+          -8.3889
+        ],
+        [
+          -5.237599999999993,
+          -7.941150000000001
+        ],
+        [
+          1.7473000000000063,
+          -7.403849999999998
+        ],
+        [
+          9.806800000000008,
+          -6.150150000000001
+        ],
+        [
+          10.344100000000001,
+          -5.7024
+        ],
+        [
+          10.344100000000001,
+          -5.433749999999999
+        ],
+        [
+          9.985900000000006,
+          -4.986
+        ],
+        [
+          9.985900000000006,
+          -2.7472499999999984
+        ],
+        [
+          9.806800000000008,
+          -1.7622000000000044
+        ],
+        [
+          9.62770000000001,
+          -1.5830999999999973
+        ],
+        [
+          9.806800000000008,
+          -0.7771500000000007
+        ],
+        [
+          9.538150000000005,
+          -0.41895000000000504
+        ],
+        [
+          9.717250000000003,
+          0.9242999999999952
+        ],
+        [
+          9.4486,
+          2.3570999999999986
+        ],
+        [
+          9.62770000000001,
+          4.774949999999997
+        ],
+        [
+          9.359050000000007,
+          5.222699999999997
+        ],
+        [
+          8.911300000000008,
+          5.491349999999999
+        ],
+        [
+          8.553100000000002,
+          6.118199999999996
+        ],
+        [
+          8.73220000000001,
+          6.924150000000003
+        ],
+        [
+          8.553100000000002,
+          7.103250000000001
+        ]
+      ]
+    },
+    {
+      "uid": "MBN",
+      "name": "Middle hBN (thin, contact-gate dielectric)",
+      "material": "hBN",
+      "function": "contact_gate_dielectric",
+      "thickness_nm": {
+        "value": 10.0,
+        "source": "auto",
+        "note": "lab design thickness for hBN:contact_gate_dielectric"
+      },
+      "width_um": {
+        "value": 10.8,
+        "source": "auto",
+        "note": "TMD + 1 µm margin (Xu rule) + hBN margin"
+      },
+      "length_um": {
+        "value": 13.2,
+        "source": "auto",
+        "note": "TMD + 1 µm margin (Xu rule) + hBN margin"
+      },
+      "pieces": 1,
+      "role": "middle_hbn",
+      "notes": "Lab rule: thin; edge ≥ 1 µm beyond every TMD edge so the contact gates sit on hBN.",
+      "literature": "'a thin BN as the contact gate dielectric' (Park 2024); thickness not stated.",
+      "image": {
+        "path": "/Users/bowieyang/Desktop/Princeton/Uri Lab/UStack/library/devices/Device_2026-11-21/images/MBN_Stack 1 Middle hBN.png",
+        "um_per_px": 0.08453097345132743,
+        "angle_deg": -136.0,
+        "x": 80.16851064256306,
+        "y": 19.642479667564075,
+        "opacity": 0.6,
+        "visible": true,
+        "mirror": false,
+        "objective": "100x",
+        "trace": {
+          "how": "auto",
+          "mode": "flake",
+          "seed_px": [
+            912.1,
+            541.3
+          ]
+        },
+        "placed": true
+      },
+      "outline": [
+        [
+          29.956752986159252,
+          20.202273868205936
+        ],
+        [
+          26.375609980175305,
+          21.848059398945654
+        ],
+        [
+          8.653055796770982,
+          18.800861665158386
+        ],
+        [
+          2.2198883331269004,
+          16.696565995056144
+        ],
+        [
+          1.0158596282522119,
+          16.654251336393045
+        ],
+        [
+          0.3050637358828965,
+          15.843354572377473
+        ],
+        [
+          -0.4480468151495094,
+          16.23648651323661
+        ],
+        [
+          -0.7211858859508791,
+          15.101295131573687
+        ],
+        [
+          -1.412089779908678,
+          15.430010193312482
+        ],
+        [
+          -1.7341741755103097,
+          15.118976907939464
+        ],
+        [
+          -1.5541848704236747,
+          14.545855661993702
+        ],
+        [
+          -2.0650994592948333,
+          14.301449477786736
+        ],
+        [
+          -2.6937966961780333,
+          14.56574766040521
+        ],
+        [
+          -2.580434492257444,
+          13.80379622118991
+        ],
+        [
+          -3.5312161247422758,
+          13.757061118435367
+        ],
+        [
+          -3.5444774570166153,
+          12.997319901265799
+        ],
+        [
+          -6.885314283090684,
+          10.269067878166146
+        ],
+        [
+          -8.340379838309513,
+          10.35779719978942
+        ],
+        [
+          -11.297246051501707,
+          11.48603747552081
+        ],
+        [
+          -13.516473267981555,
+          11.334781057028575
+        ],
+        [
+          -18.624978277104475,
+          1.670967429802204
+        ],
+        [
+          -21.736560033497277,
+          -6.06443982811146
+        ],
+        [
+          -28.65283766228643,
+          -21.33316281839493
+        ],
+        [
+          -29.49467753494212,
+          -22.39509643275463
+        ],
+        [
+          -30.369670738283645,
+          -25.356383090038268
+        ],
+        [
+          -29.80539038052077,
+          -25.682887929731343
+        ],
+        [
+          -27.284291206645158,
+          -22.750334159042104
+        ],
+        [
+          -26.655593969761952,
+          -23.01463234166057
+        ],
+        [
+          -24.609725392231574,
+          -21.91038406863777
+        ],
+        [
+          -20.66229354973153,
+          -20.71266559010589
+        ],
+        [
+          -11.31678475360408,
+          -18.65920502705528
+        ],
+        [
+          -9.466377035480399,
+          -17.86820026145122
+        ],
+        [
+          1.4608208520608255,
+          -15.905679242069603
+        ],
+        [
+          8.22712382153516,
+          -12.857232605619688
+        ],
+        [
+          14.249157128159977,
+          -8.909159883530933
+        ],
+        [
+          17.250227782266634,
+          -7.504929435363733
+        ],
+        [
+          29.39913615104833,
+          -4.487105467759582
+        ],
+        [
+          34.2016691984784,
+          -1.4677121576984233
+        ],
+        [
+          39.66637325327187,
+          -0.42313987991014734
+        ],
+        [
+          39.926250991798895,
+          -0.047689715416805
+        ],
+        [
+          38.795480054227426,
+          0.47869642777442123
+        ],
+        [
+          37.926797077228706,
+          1.5071562716539153
+        ],
+        [
+          36.218484449620014,
+          1.600306037368639
+        ],
+        [
+          34.172295432295286,
+          4.1059336569241935
+        ],
+        [
+          33.168148030918736,
+          4.6301095780697015
+        ],
+        [
+          33.1836195852388,
+          5.516474331434204
+        ],
+        [
+          33.89883592169956,
+          6.580618167839625
+        ],
+        [
+          32.35030016097165,
+          8.570910754432568
+        ],
+        [
+          32.765534322288005,
+          10.59025666741427
+        ],
+        [
+          32.60764723765859,
+          12.429613275309325
+        ],
+        [
+          30.252635157006566,
+          15.383948826661447
+        ],
+        [
+          30.730075975397526,
+          17.33887786052282
+        ]
+      ]
+    },
+    {
+      "uid": "CG",
+      "name": "Pt contact gates",
+      "material": "Pt/Ti",
+      "function": "contact_gate",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Ti",
+          "thickness_nm": {
+            "value": 5.0,
+            "source": "auto",
+            "note": "lab design thickness for Pt/Ti:contact_gate:Ti"
+          }
+        },
+        {
+          "metal": "Pt",
+          "thickness_nm": {
+            "value": 30.0,
+            "source": "auto",
+            "suggested": 8.0,
+            "suggested_source": "H. Park et al., arXiv:2406.09591 (2024), Methods",
+            "note": "lab design thickness for Pt/Ti:contact_gate:Pt"
+          }
+        }
+      ],
+      "literature": "Pt (8 nm) contact gates by EBL + evaporation (Park 2024)."
+    },
+    {
+      "uid": "TBN",
+      "name": "hBN (top-gate dielectric)",
+      "material": "hBN",
+      "function": "top_gate_dielectric",
+      "thickness_nm": {
+        "value": 15.0,
+        "source": "auto",
+        "note": "lab design thickness for hBN:top_gate_dielectric"
+      },
+      "width_um": {
+        "value": 14.0,
+        "source": "auto",
+        "note": "covers every conducting flake + 1 × spacing"
+      },
+      "length_um": {
+        "value": 16.4,
+        "source": "auto",
+        "note": "covers every conducting flake + 1 × spacing"
+      },
+      "pieces": 1,
+      "role": "tg_hbn",
+      "image": {
+        "path": "/Users/bowieyang/Desktop/Princeton/Uri Lab/UStack/library/devices/Device_2026-11-21/images/TBN_Stack 1 Top hBN.png",
+        "um_per_px": 0.08453097345132743,
+        "angle_deg": 81.0,
+        "x": -61.31064302516785,
+        "y": -82.54993669455855,
+        "opacity": 0.6,
+        "visible": true,
+        "mirror": false,
+        "objective": "100x",
+        "trace": {
+          "how": "auto",
+          "mode": "flake",
+          "seed_px": [
+            1056.2,
+            597.5
+          ]
+        },
+        "placed": true
+      },
+      "outline": [
+        [
+          -36.696467251197994,
+          -13.008775016972828
+        ],
+        [
+          -26.553023210352816,
+          -14.79667122837398
+        ],
+        [
+          -24.928555708624632,
+          -15.41662661251785
+        ],
+        [
+          -19.635714960951308,
+          -16.34559648407931
+        ],
+        [
+          -15.725621402159817,
+          -17.41822572407665
+        ],
+        [
+          -1.1493664149479264,
+          -17.550887663910366
+        ],
+        [
+          0.08450320482202134,
+          -17.202315900985184
+        ],
+        [
+          7.961548095624233,
+          -17.27125597124003
+        ],
+        [
+          9.008909280083412,
+          -17.527807938272566
+        ],
+        [
+          11.653543501423894,
+          -16.858681825110907
+        ],
+        [
+          12.999482771948664,
+          -15.802530134983359
+        ],
+        [
+          24.088916668441826,
+          3.8383115591831265
+        ],
+        [
+          24.42759446423173,
+          11.128636679206146
+        ],
+        [
+          24.25399127379842,
+          18.046767876449476
+        ],
+        [
+          23.83977123198565,
+          18.293706389971838
+        ],
+        [
+          20.6924694779321,
+          17.885527496676882
+        ],
+        [
+          19.598686921605687,
+          18.421430642754643
+        ],
+        [
+          19.217702493157613,
+          20.023098932470127
+        ],
+        [
+          17.663278523151195,
+          21.08529177111548
+        ],
+        [
+          16.206092549713418,
+          21.044088599924223
+        ],
+        [
+          14.156968604820474,
+          19.555312908805384
+        ],
+        [
+          12.653361259515467,
+          19.79346091665938
+        ],
+        [
+          11.261000617123468,
+          19.016660405577092
+        ],
+        [
+          10.63664998014541,
+          17.936886555595017
+        ],
+        [
+          10.579792206926186,
+          15.860568145855185
+        ],
+        [
+          9.760142628969003,
+          15.265057869407643
+        ],
+        [
+          7.697832925573523,
+          15.410363133527175
+        ],
+        [
+          5.118024035278807,
+          14.005639680474456
+        ],
+        [
+          -0.08279691650185939,
+          12.653378747806787
+        ],
+        [
+          -1.9962290507854528,
+          12.593771617437
+        ],
+        [
+          -16.727402755627043,
+          10.030982711228816
+        ],
+        [
+          -24.28828854902695,
+          9.233851831659267
+        ],
+        [
+          -36.598406306787524,
+          -12.389642580670772
+        ]
+      ]
+    },
+    {
+      "uid": "TG",
+      "name": "Graphite top gate",
+      "material": "graphite",
+      "function": "top_gate",
+      "thickness_nm": {
+        "value": 3.0,
+        "source": "auto",
+        "note": "lab design thickness for graphite:top_gate"
+      },
+      "width_um": {
+        "value": 6.4,
+        "source": "auto",
+        "note": "probe span + gate margin 2 µm"
+      },
+      "length_um": {
+        "value": 9.6,
+        "source": "auto",
+        "note": "probe span + gate margin 2 µm"
+      },
+      "pieces": 1,
+      "image": {
+        "path": "/Users/bowieyang/Desktop/Princeton/Uri Lab/UStack/library/devices/Device_2026-11-21/images/TG_Stack 1 graphite top gate.png",
+        "um_per_px": 0.08453097345132743,
+        "angle_deg": -142.0,
+        "x": 55.90255997975998,
+        "y": -5.319824870578202,
+        "opacity": 0.6,
+        "visible": true,
+        "mirror": false,
+        "objective": "100x",
+        "trace": {
+          "how": "auto",
+          "mode": "flake",
+          "seed_px": [
+            405.7,
+            415.3
+          ]
+        },
+        "placed": true
+      },
+      "outline": [
+        [
+          15.632305157638847,
+          13.78766247722423
+        ],
+        [
+          15.120678913730067,
+          14.29706089599268
+        ],
+        [
+          13.543954198674186,
+          13.40611028264086
+        ],
+        [
+          -43.71027450437621,
+          -1.8928851394056503
+        ],
+        [
+          -71.0373600299366,
+          -11.424523834231808
+        ],
+        [
+          -94.64861259758558,
+          -21.348612502174568
+        ],
+        [
+          -109.2537828085523,
+          -26.509190096900745
+        ],
+        [
+          -107.9306031657824,
+          -28.202782808552318
+        ],
+        [
+          -70.51005856098928,
+          -22.717530635161584
+        ],
+        [
+          -21.112960878702648,
+          -13.216277001738606
+        ],
+        [
+          16.62954778527775,
+          -7.706760098972595
+        ],
+        [
+          18.29227274118918,
+          -6.634978152404475
+        ]
+      ]
+    },
+    {
+      "uid": "LEADS",
+      "name": "Cr/Au leads",
+      "material": "Au/Cr",
+      "function": "leads",
+      "pieces": 1,
+      "metal_parts": [
+        {
+          "metal": "Cr",
+          "thickness_nm": {
+            "value": 5.0,
+            "source": "auto",
+            "suggested": 5.0,
+            "suggested_source": "H. Park et al., arXiv:2406.09591 (2024), Methods",
+            "note": "lab design thickness for Au/Cr:leads:Cr"
+          }
+        },
+        {
+          "metal": "Au",
+          "thickness_nm": {
+            "value": 70.0,
+            "source": "auto",
+            "suggested": 70.0,
+            "suggested_source": "H. Park et al., arXiv:2406.09591 (2024), Methods",
+            "note": "lab design thickness for Au/Cr:leads:Au"
+          }
+        }
+      ],
+      "literature": "'Cr/Au (5/70 nm) connecting electrodes' (Park 2024)."
+    }
+  ],
+  "pattern": "hall_bar",
+  "hall_bar": {
+    "channel_width_um": {
+      "value": 2.4,
+      "source": "auto",
+      "note": "3 × arm width"
+    },
+    "channel_length_um": {
+      "value": 4.8,
+      "source": "auto",
+      "note": "1 × probe pitch 4.8 µm (2 × channel width, ≥ arm width + spacing)"
+    },
+    "n_probe_pairs": {
+      "value": 2.0,
+      "source": "auto",
+      "note": "preset (2 = minimum for four-probe Rxx and Rxy)"
+    },
+    "arm_width_um": {
+      "value": 0.8,
+      "source": "auto",
+      "note": "electrode width target 0.8 µm"
+    },
+    "arm_length_um": {
+      "value": 2.4,
+      "source": "auto",
+      "note": "no gate to clear: preset × channel width"
+    },
+    "sd_extension_um": {
+      "value": 2.4,
+      "source": "auto",
+      "note": "source/drain style automatic: fits straight (2.4 µm: no gate to clear: preset × channel width) and bent (2 µm) contacts"
+    },
+    "sd_style": "auto"
+  },
+  "contact_scheme": "prepatterned_bottom",
+  "pattern_params": {
+    "tg_length_um": null,
+    "tg_overhang_um": null,
+    "cg_inner_um": {
+      "value": 0.8,
+      "source": "auto",
+      "note": "preset × electrode spacing"
+    },
+    "cg_outer_um": {
+      "value": 0.8,
+      "source": "auto",
+      "note": "preset × electrode spacing"
+    },
+    "cg_side_um": {
+      "value": 0.8,
+      "source": "auto",
+      "note": "preset × electrode spacing"
+    },
+    "sg_gap_um": null,
+    "pt_overlap_um": null
+  },
+  "gate_limits_V": {
+    "BG": null,
+    "CG": null,
+    "TG": null
+  },
+  "requirements": [],
+  "references": [
+    {
+      "cite": "H. Park et al., arXiv:2406.09591 (2024), Methods",
+      "url": "https://arxiv.org/abs/2406.09591"
+    },
+    {
+      "cite": "H. Park et al., Nature 622, 74 (2023), arXiv:2308.02657, Methods",
+      "url": "https://arxiv.org/abs/2308.02657"
+    }
+  ],
+  "process": [
+    "PC dry transfer: pick up the bottom hBN, then the graphite bottom gate; release onto the Si chip.",
+    "EBL + e-beam evaporation of the Pt Hall-bar contacts on the BG stack; contact-mode AFM cleaning (Pt RMS < 300 pm).   [UStack Stage 2: prepattern contacts]",
+    "Cut the TMD monolayer with an AFM tip (MoTe2: Ar glovebox, O2/H2O < 0.1 ppm). Pick up the thin hBN, half 1, rotate, half 2; release onto the BG stack and Pt.",
+    "Wash, AFM-clean; EBL + evaporation of the Pt contact gates and the Cr/Au connecting electrodes; AFM-clean again.   [UStack Stage 2: contact gates + leads]",
+    "Transfer the hBN/graphite/hBN top gate."
+  ],
+  "stage2": {
+    "flow": {
+      "bondpads": "tWSe2 batch 1 chip",
+      "steps": {},
+      "selected": [],
+      "order": [
+        "hall_bars",
+        "contact_gate",
+        "electrodes"
+      ],
+      "canvas_image": null,
+      "ui": {
+        "current": null,
+        "collapsed": [],
+        "hidden": [],
+        "view": null,
+        "tab": null,
+        "export_flakes": false,
+        "shown_plans": []
+      }
+    }
+  },
+  "history": [
+    {
+      "time": "2026-11-21T21:56:17",
+      "note": "Created from template 'xu_tmd'"
+    },
+    {
+      "time": "2026-11-21T22:40:28",
+      "note": "Saved"
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "summary": "Valid · 0 errors · 0 missing · 0 warnings",
+    "issues": []
+  }
+}

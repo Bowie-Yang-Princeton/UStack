@@ -783,7 +783,7 @@ def locate_written(flow: Flow, key: str, source: str, images: list) -> dict:
 
 
 def generate(spec: DeviceSpec, flow: Flow, key: str, config: LabConfig, bondpads: BondPads | None,
-             group: str | None = None) -> FlowStep:
+             group: str | None = None, run_check: bool = True) -> FlowStep:
     """Draw step ``key``'s pattern into its :class:`FlowStep` (shapes, notes, issues). Raises
     ValueError with a message when it cannot (nothing is changed to make it fit). For the electrodes,
     ``group`` (an :data:`ELECTRODE_GROUPS` key) draws that group only, keeping the others; None draws all."""
@@ -1016,7 +1016,8 @@ def generate(spec: DeviceSpec, flow: Flow, key: str, config: LabConfig, bondpads
             if group is None and not any(st.shapes.get(ELECTRODE_GROUPS[g][1]) for g in present):
                 raise ValueError("\n".join(n for g in present for n in st.group_notes.get(g, [])))
     st.exported = None
-    check(spec, flow, key, config)
+    if run_check:                                      # (the auto design checks its finalists itself)
+        check(spec, flow, key, config)
     return st
 
 

@@ -1,5 +1,6 @@
 """Stage 2 › Export GDS… / Merge & Export: where to write the file (user, 2026-11-20) — the device's own folder
-(``library/devices/<device>/stage2/…``, the default) or any other folder, and the file's name."""
+(``library/devices/<device>/stage2/…``, the default) or any other folder, and the file's name. Flake layout ›
+Export to image… (2026-11-21) uses the same window for a JPG (:func:`ask_save_path`)."""
 
 from __future__ import annotations
 
@@ -12,14 +13,16 @@ SETTINGS = ("Uri Lab", "UStack")
 
 
 class SaveGdsDialog(Dialog):
-    def __init__(self, parent, device_dir: Path, file_name: str, title: str = "Export GDS"):
+    def __init__(self, parent, device_dir: Path, file_name: str, title: str = "Export GDS", ext: str = ".gds",
+                 what: str = "GDS file", key: str = "gds_dir"):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.resize(640, 260)
         self.device_dir = Path(device_dir)
+        self.ext, self.what, self.key = ext, what, key
         settings = QtCore.QSettings(*SETTINGS)
-        other = str(settings.value("gds_dir", "") or "")
-        self.body.addWidget(label("Where to write the GDS file", "cardTitle"))
+        other = str(settings.value(key, "") or "")
+        self.body.addWidget(label(f"Where to write the {what}", "cardTitle"))
         group = QtWidgets.QButtonGroup(self)
         self.in_device = QtWidgets.QRadioButton("In the device's folder")
         self.in_other = QtWidgets.QRadioButton("In another folder")
@@ -51,27 +54,32 @@ class SaveGdsDialog(Dialog):
 
     def _browse(self) -> None:
         start = self.folder.text().strip() or str(self.device_dir)
-        path = QtWidgets.QFileDialog.getExistingDirectory(self, "Folder for the GDS file", start)
+        path = QtWidgets.QFileDialog.getExistingDirectory(self, f"Folder for the {self.what}", start)
         if path:
             self.folder.setText(path)
             self.in_other.setChecked(True)
 
     def path(self) -> Path | None:
         """The file to write (None when no folder is chosen for "another folder")."""
-        name = self.name.text().strip() or "pattern.gds"
-        if not name.lower().endswith(".gds"):
-            name += ".gds"
+        name = self.name.text().strip() or "pattern" + self.ext
+        if not name.lower().endswith(self.ext):
+            name += self.ext
         if self.in_device.isChecked():
             return self.device_dir / name
         folder = self.folder.text().strip()
         if not folder:
             return None
-        QtCore.QSettings(*SETTINGS).setValue("gds_dir", folder)       # offered again next time
+        QtCore.QSettings(*SETTINGS).setValue(self.key, folder)       # offered again next time
         return Path(folder).expanduser() / name
 
 
 def ask_gds_path(parent, device_dir: Path, file_name: str, title: str = "Export GDS") -> Path | None:
-    dlg = SaveGdsDialog(parent, device_dir, file_name, title)
+    return ask_save_path(parent, device_dir, file_name, title)
+
+
+def ask_save_path(parent, device_dir: Path, file_name: str, title: str = "Export GDS", ext: str = ".gds",
+                  what: str = "GDS file", key: str = "gds_dir") -> Path | None:
+    dlg = SaveGdsDialog(parent, device_dir, file_name, title, ext, what, key)
     while dlg.exec():
         p = dlg.path()
         if p is not None:

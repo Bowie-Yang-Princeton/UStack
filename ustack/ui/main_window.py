@@ -74,7 +74,7 @@ class LibraryPanel(Panel):
     def refresh(self) -> None:
         self.tpl.clear()
         for info in templates.list_templates():
-            it = QtWidgets.QTreeWidgetItem(self.tpl, [info.name + ("" if info.builtin else "  · lab")])
+            it = QtWidgets.QTreeWidgetItem(self.tpl, [info.name + ("" if info.builtin else "  · edited" if info.overrides else "  · lab")])
             it.setData(0, Qt.ItemDataRole.UserRole, str(info.path))
             it.setToolTip(0, info.description)
         if self.tpl.topLevelItemCount():
@@ -149,7 +149,7 @@ class LibraryPanel(Panel):
         menu = QtWidgets.QMenu(self.tpl)
         menu.addAction("Edit template", self.edit_template)
         menu.addAction("New device from it…", self.new_from_template)
-        act = menu.addAction("Delete template…", self.delete_template)
+        act = menu.addAction("Restore built-in…" if info is not None and info.overrides else "Delete template…", self.delete_template)
         act.setEnabled(info is not None and not info.builtin)
         menu.exec(self.tpl.viewport().mapToGlobal(pos))
 
@@ -232,8 +232,12 @@ class LibraryPanel(Panel):
         if info.builtin:
             self.app.warn("Templates", "Built-in templates cannot be deleted.")
             return
-        if not confirm(self.app, "Delete template?", f"Delete the lab template '{info.name}'? This cannot be undone.\n\n{info.path}",
-                       "Delete", danger=True):
+        if info.overrides:
+            if not confirm(self.app, "Restore built-in?", f"Discard the lab's edit of '{info.name}' and bring the built-in template "
+                           f"back? This cannot be undone.\n\n{info.path}", "Restore", danger=True):
+                return
+        elif not confirm(self.app, "Delete template?", f"Delete the lab template '{info.name}'? This cannot be undone.\n\n{info.path}",
+                         "Delete", danger=True):
             return
         templates.delete_template(info)
         self.refresh()
@@ -420,7 +424,7 @@ class MainWindow(FramelessMainWindow):
 
     def _layout_page(self) -> QtWidgets.QWidget:
         """Flake layout: the traced borders only (no images), placed on each other — click a border's line
-        to select it, drag to move it, turn it with the slider; the view moves, zooms and turns like the
+        to select it, drag to move it, turn it with the round handle above it (Shift: 15° steps); the view moves, zooms and turns like the
         EBL canvas."""
         page = QtWidgets.QWidget()
         lay = QtWidgets.QVBoxLayout(page)
@@ -428,6 +432,7 @@ class MainWindow(FramelessMainWindow):
         self.layout_canvas = c = Canvas()
         c.drag_outlines = True
         c.scale_handles = True                       # PowerPoint-style stretch / scale handles on the selected outline
+        c.rotate_handles = True                      # … and the round rotate handle above it (replaces the turn slider, 2026-11-21)
         c.trackpad_gestures = True
         c.empty_text = "Trace the flakes first (Flake images tab), then place their borders on each other here"
         bar, self.layout_tools = self._toolstrip(c, [("pointer", "pointer", "Click a border's line to select it and drag it to move it; "
@@ -449,21 +454,18 @@ class MainWindow(FramelessMainWindow):
         rot, self.layout_rotation, self.layout_rotation_text, self.layout_rotation_reset = self._view_rotation_row(c)
         turn = QtWidgets.QHBoxLayout()
         turn.setContentsMargins(6, 0, 6, 2)
-        turn.addWidget(label("Turn selected border", "muted"))
-        self.layout_turn = AngleControl(0.0, "Turn the selected border about its middle (its image turns with it); "
-                                             "double-click for 0°, or type the angle")
-        self.layout_turn.setMaximumWidth(320)
-        self.layout_turn.setEnabled(False)
-        self.layout_turn_text = self.layout_turn            # (the angle shows in its own box)
-        turn.addWidget(self.layout_turn, 1)
-        turn.addStretch(1)
         self.layout_metal = CheckBox("Show metal parts")
         self.layout_metal.setToolTip("The fingers, contact gate and electrodes generated in Stage 2, where they are relative to the flakes "
                                      "(not editable here)")
         self.layout_metal.toggled.connect(lambda _on: self.refresh_layout_canvas())
         turn.addWidget(self.layout_metal)
-        self.layout_turn.valueChanged.connect(self._layout_turned)
-        self.layout_turn.sliderReleased.connect(lambda: self._layout_turned(self.layout_turn.value(), final=True))
+        turn.addStretch(1)
+        turn.addWidget(button("Export to image…", self.export_layout_image, None,
+                              "Save what the Flake layout canvas shows as a JPG image (the device's folder by default)"))
+        turn.addSpacing(6)
+        turn.addWidget(button("Auto design…", self.auto_design, "primary",
+                              "Place the traced flakes automatically: the stack's rules met, room for the Hall bars, contact gate, "
+                              "gate contacts and electrode landings (turn and shift only)"))
         lay.addLayout(rot)
         lay.addLayout(turn)
         self._layout_turns: dict[str, float] = {}           # turn of borders without an image (this session)
@@ -611,9 +613,43 @@ class MainWindow(FramelessMainWindow):
             self.library.refresh()
             self.library.select_template(dlg.saved_path)
 
-    def save(self) -> None:
+    def _name_new_device(self) -> bool:
+        """The first Save of a device asks its name (user, 2026-11-21). Files copied into the device's folder
+        before (Flake images, Stage 2 images) move to the folder of the name chosen; their paths follow."""
+        name = self.spec.name
+        while True:
+            name = prompt_text(self, "Save device", "Name of the device (its folder in the library):", name, "Save")
+            if not name:
+                return False
+            new_dir = paths.devices_dir() / paths.safe_name(name)
+            if not (new_dir / "spec.json").exists():
+                break
+            self.warn("Save device", f"A device named '{new_dir.name}' is in the library already. Choose another name.")
+        old_dir = paths.devices_dir() / paths.safe_name(self.spec.name)
+        self.spec.name = name
+        if old_dir.resolve() != new_dir.resolve() and old_dir.is_dir() and not (old_dir / "spec.json").exists():
+            from ..devices import rewrite_paths
+            if new_dir.exists():
+                for item in old_dir.iterdir():
+                    if not (new_dir / item.name).exists():
+                        shutil.move(str(item), str(new_dir / item.name))
+            else:
+                shutil.move(str(old_dir), str(new_dir))
+            old, new = str(old_dir.resolve()), str(new_dir.resolve())
+            self.ebl_flow.remember_ui()
+            for layer in self.spec.layers:
+                if layer.image:
+                    layer.image = rewrite_paths(layer.image, old, new)
+            self.spec.stage2 = rewrite_paths(self.spec.stage2, old, new)
+            self.ebl_flow.load_from_spec()
+            self.ebl_flow.build()
+        return True
+
+    def save(self) -> bool:
         if self.spec is None:
-            return
+            return False
+        if self.spec_path is None and not self._name_new_device():
+            return False
         report = validate_stage1(self.spec, self.config)
         self.spec.validation = report.to_json()
         self.ebl_flow.remember_ui()                       # reopening shows the EBL canvas as it is now
@@ -628,6 +664,7 @@ class MainWindow(FramelessMainWindow):
         # saving is allowed at any stage: missing values are listed in the Check tab, not asked for here
         more = f" {len(report.missing_items())} values still missing (Configure or Check › Fill in missing)." if report.missing else ""
         self.status(f"Device saved to {path} — {report.summary()}.{more}")
+        return True
 
     def after_configure(self, result) -> None:
         """Refresh everything after Configure changed the spec."""
@@ -855,7 +892,7 @@ class MainWindow(FramelessMainWindow):
     def layer_selected(self, uid: str) -> None:
         self.view3d.set_highlight(uid)
         self.layout_canvas.set_active_polygon(f"outline:{uid}" if f"outline:{uid}" in self.layout_canvas.polys else None)
-        self._show_layout_turn(uid if f"outline:{uid}" in self.layout_canvas.polys else None)
+        self._layout_lock_status(uid if f"outline:{uid}" in self.layout_canvas.polys else None)
 
     def select_layer(self, uid: str) -> None:
         if self.tabs.currentWidget() is self.flake_panel:
@@ -905,13 +942,51 @@ class MainWindow(FramelessMainWindow):
                 c.set_polygon(f"outline:{layer.uid}", layer.outline, layer_color(layer, self.config), True, 100 + z, 0.15)
         if active in c.polys:
             c.set_active_polygon(active)
-        self._show_layout_turn(active.split(":", 1)[1] if active in c.polys else None)
+        self._layout_lock_status(active.split(":", 1)[1] if active in c.polys else None)
         if fit:
             c.fit()
 
+    def export_layout_image(self) -> Path | None:
+        """Flake layout › Export to image… (user, 2026-11-21): what the canvas shows, as a JPG, in the device's folder
+        (default) or another folder, under a name the user gives."""
+        if self.spec is None:
+            return None
+        from .save_gds import ask_save_path
+        name = f"{paths.safe_name(self.spec.name)}_flake_layout.jpg"
+        path = ask_save_path(self, self.device_dir(), name, "Export to image", ".jpg", "image", "image_dir")
+        if path is None:
+            return None
+        return self.save_layout_image(path)
+
+    def save_layout_image(self, path: Path) -> Path | None:
+        c = self.layout_canvas
+        img = c.viewport().grab().toImage()              # as shown (full resolution on a Retina screen)
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not img.save(str(path), "JPG", 95):
+            self.warn("Export to image", f"Could not write {path}.")
+            return None
+        self.status(f"Flake layout saved to {path}")
+        return path
+
+    def auto_design(self) -> None:
+        """Flake layout › Auto design…: its own window (:class:`ustack.ui.auto_design_window.AutoDesignDialog`)."""
+        if self.spec is None:
+            return
+        from .auto_design_window import AutoDesignDialog
+        dlg = AutoDesignDialog(self)
+        dlg.exec()
+
+    def layout_auto_applied(self, moved: list, cand) -> None:
+        """The auto design moved ``moved`` flakes' borders (and images) in Flake layout: one undo step."""
+        self.spec_changed("image")
+        self.flake_panel.refresh()
+        self.refresh_layout_canvas(fit=True)
+        self.status(f"Auto design applied: {len(moved)} flake(s) placed — {cand.summary()}")
+
     def _layout_selected(self, key: str) -> None:
         uid = key.split(":", 1)[1] if key.startswith("outline:") else None
-        self._show_layout_turn(uid)
+        self._layout_lock_status(uid)
         if uid and self.spec is not None and self.spec.layer(uid) is not None:
             self.select_layer(uid)
 
@@ -919,20 +994,11 @@ class MainWindow(FramelessMainWindow):
         img = layer.image or {}
         return float(img.get("angle_deg", 0.0)) if img.get("um_per_px") else self._layout_turns.get(layer.uid, 0.0)
 
-    def _show_layout_turn(self, uid: str | None) -> None:
+    def _layout_lock_status(self, uid: str | None) -> None:
         layer = self.spec.layer(uid) if (self.spec is not None and uid) else None
         step = getattr(self, "_layout_fixed", {}).get(uid) if uid else None
-        if step:
+        if step and layer is not None:
             self.status(f"{layer.label} is on the chip ({ef.STEPS[step].name}): its shape and place come from Stage 2 (locked here)")
-        self.layout_turn.blockSignals(True)
-        if layer is None or not layer.outline or step:
-            self.layout_turn.setEnabled(False)
-            self.layout_turn.setValue(0)
-        else:
-            deg = math.remainder(self._border_turn(layer), 360.0)
-            self.layout_turn.setEnabled(True)
-            self.layout_turn.setValue(deg)
-        self.layout_turn.blockSignals(False)
 
     def turn_border(self, layer, delta: float) -> None:
         """Turn ``layer``'s traced border by ``delta``° about its middle; its image turns with it (or the session turn)."""
@@ -947,22 +1013,6 @@ class MainWindow(FramelessMainWindow):
             self._layout_turns[layer.uid] = self._border_turn(layer) + delta
             if layer.image is not None:
                 layer.image["placed"] = True
-
-    def _layout_turned(self, value: float, final: bool = False) -> None:
-        """Turn the selected border about its middle to ``value``° (its image turns with it)."""
-        key = self.layout_canvas.active_poly
-        layer = self.spec.layer(key.split(":", 1)[1]) if (self.spec is not None and key and key.startswith("outline:")) else None
-        if layer is None or not layer.outline:
-            return
-        delta = math.remainder(float(value) - self._border_turn(layer), 360.0)
-        if abs(delta) > 1e-9:
-            self.turn_border(layer, delta)
-            self.layout_canvas.set_polygon(key, layer.outline, layer_color(layer, self.config), True,
-                                           self.layout_canvas.polys[key].zValue(), 0.15)
-            self.dirty = True
-        if final or not self.layout_turn.isSliderDown():
-            self.spec_changed("image")
-            self.flake_panel.refresh()
 
     def layer_image(self, uid: str):
         """The flake image of layer ``uid`` (read from its file the first time)."""
@@ -1079,6 +1129,20 @@ class MainWindow(FramelessMainWindow):
         if layer is None:
             return
         d = ef.translation_of(layer.outline, pts) if layer.outline else None
+        if d is None and layer.outline and ef.is_rigid_move(layer.outline, pts, 1e-4):
+            m, t = ef._rigid(layer.outline, pts)
+            if np.linalg.det(m) > 0:              # turned with the rotate handle: the image turns with it (placed)
+                ang = math.degrees(math.atan2(m[1, 0], m[0, 0]))
+                if (layer.image or {}).get("um_per_px"):
+                    layer.image = ef._image_after(layer.image, m, t)
+                else:
+                    self._layout_turns[uid] = self._border_turn(layer) + ang
+                    if layer.image is not None:
+                        layer.image["placed"] = True
+                layer.outline = [list(p) for p in pts]
+                self.spec_changed("image")
+                self.flake_panel.refresh()
+                return
         if d is not None and layer.image is not None:
             layer.image["x"] = layer.image.get("x", 0.0) + d[0]
             layer.image["y"] = layer.image.get("y", 0.0) + d[1]
@@ -1121,6 +1185,7 @@ class MainWindow(FramelessMainWindow):
             if ans == QtWidgets.QMessageBox.StandardButton.Cancel:
                 e.ignore()
                 return
-            if ans == QtWidgets.QMessageBox.StandardButton.Save:
-                self.save()
+            if ans == QtWidgets.QMessageBox.StandardButton.Save and not self.save():
+                e.ignore()
+                return
         super().closeEvent(e)

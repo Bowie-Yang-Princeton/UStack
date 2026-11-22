@@ -41,12 +41,13 @@ def test_main_window_templates(cfg):
     w.close()
 
 
-def test_new_device_presets_rules_and_scale_bar(cfg, tmp_path):
+def test_new_device_presets_rules_and_scale_bar(cfg, tmp_path, monkeypatch):
     from ustack.app import make_app
     from ustack.ui.style import QtCore, QtWidgets, setup_application
     from ustack.ui.main_window import MainWindow
     from ustack.ui.dialogs import PresetsDialog, RulesDialog
     from ustack.ui.new_device import NewDeviceDialog
+    from ustack import templates
     app = make_app()
     setup_application(app)
     w = MainWindow(cfg)
@@ -66,11 +67,41 @@ def test_new_device_presets_rules_and_scale_bar(cfg, tmp_path):
     dlg = NewDeviceDialog(cfg, w)
     dlg._create()
     assert dlg.spec is not None and dlg.spec.template_id
+    # … or from a template edited first: Edit Template is the next step in the same window (user, 2026-11-21); the
+    # template file itself is not changed
+    dlg = NewDeviceDialog(cfg, w)
+    assert dlg.edit_btn.isVisibleTo(dlg) and not dlg.back_btn.isVisibleTo(dlg)
+    tpl_path = dlg.tpl.currentItem().data(0, QtCore.Qt.ItemDataRole.UserRole)
+    n_tpl = len(templates.load_template(tpl_path).layers)
+    dlg.edit_template()
+    assert dlg.steps.currentWidget() is dlg.edit_page and dlg.back_btn.isVisibleTo(dlg) and not dlg.edit_btn.isVisibleTo(dlg)
+    dlg.editor.stack.list.setCurrentRow(0)
+    dlg.editor.stack._delete()
+    dlg.back()
+    dlg.edit_template()                                                 # the edit is kept while the same template is chosen
+    assert len(dlg.editor.spec.layers) == n_tpl - 1
+    dlg._create()
+    assert len(dlg.spec.layers) == n_tpl - 1 and dlg.spec.name == dlg.name.text()
+    assert len(templates.load_template(tpl_path).layers) == n_tpl
     w.adopt_spec(spec, "new")
     app.processEvents()
+    # the first Save asks the device's name (user, 2026-11-21); files copied in before move to that folder
+    from ustack import paths
+    from ustack.ui import main_window as mw
+    early = w.device_dir() / "images" / "early.png"
+    early.parent.mkdir(parents=True, exist_ok=True)
+    early.write_bytes(b"png")
+    spec.layers[3].image = {"path": str(early), "um_per_px": 0.1, "angle_deg": 0.0, "x": 0.0, "y": 0.0}
+    monkeypatch.setattr(mw, "prompt_text", lambda *a, **k: None)
+    assert not w.save() and w.spec_path is None                         # Cancel: not saved
+    monkeypatch.setattr(mw, "prompt_text", lambda *a, **k: "scratch renamed")
+    assert w.save()
     # Save device puts it in the devices list, selected
-    w.save()
-    assert w.library.dev.currentItem() is not None and "scratch" in w.library.dev.currentItem().text(0)
+    assert w.library.dev.currentItem() is not None and "scratch renamed" in w.library.dev.currentItem().text(0)
+    moved = paths.devices_dir() / paths.safe_name("scratch renamed") / "images" / "early.png"
+    assert moved.is_file() and spec.layers[3].image["path"] == str(moved.resolve()) and not early.exists()
+    monkeypatch.setattr(mw, "prompt_text", lambda *a, **k: pytest.fail("asked again"))
+    assert w.save()                                                     # later saves do not ask
     # the 3D scale bar re-chooses its length with the zoom
     w.view3d.resize(900, 600)
     w.view3d.grab()
@@ -164,11 +195,12 @@ def test_library_buttons_edit_template_and_new_device_from_description(cfg, monk
     assert dlg.describe.draft is not None and dlg.describe.out.topLevelItemCount() > 2
     dlg._create()
     assert dlg.spec is not None and dlg.spec.name == "described"
-    # Edit template: its own window (the open device untouched); a built-in is saved as a lab copy, never overwritten
-    from ustack.ui import template_editor as te
+    # Edit template: its own window (the open device untouched); Save overwrites the template (user, 2026-11-21) — for
+    # a built-in, the lab's edit takes its place (the shipped file is kept; Restore built-in brings it back)
     from ustack.ui.template_editor import TemplateEditorDialog
     builtin = next(t for t in templates.list_templates() if t.builtin)
     before = builtin.path.read_text(encoding="utf-8")
+    n_list = len(templates.list_templates())
     w.adopt_spec(templates.new_device_from(templates.load_template(builtin), "dev"), "new")
     dev_layers = [l.uid for l in w.spec.layers]
     d = TemplateEditorDialog(cfg, builtin, w)
@@ -180,13 +212,14 @@ def test_library_buttons_edit_template_and_new_device_from_description(cfg, monk
     assert [l.uid for l in w.spec.layers] == dev_layers                 # the device is not touched
     d.family.setCurrentIndex(d.family.findData("custom"))
     d._options_changed()
-    monkeypatch.setattr(te, "prompt_text", lambda *a, **k: "Edited copy")
-    assert d.save() and not d.dirty
+    assert d.save() and not d.dirty                                     # no name asked
     assert builtin.path.read_text(encoding="utf-8") == before
-    lab = next(t for t in templates.list_templates() if t.name == "Edited copy")
+    infos = templates.list_templates()
+    assert len(infos) == n_list                                         # in the built-in's place, not a new entry
+    lab = next(t for t in infos if t.id == builtin.id)
     tpl = templates.load_template(lab)
-    assert not lab.builtin and len(tpl.layers) == n - 1 and tpl.family == "custom"
-    # the lab copy is written back over its own file on the next save
+    assert not lab.builtin and lab.overrides == builtin.id and len(tpl.layers) == n - 1 and tpl.family == "custom"
+    assert len(templates.load_template(builtin.id).layers) == n - 1     # by id too
     d.desc.setPlainText("edited description")
     assert d.save()
     assert templates.load_template(lab).description == "edited description"
@@ -199,6 +232,13 @@ def test_library_buttons_edit_template_and_new_device_from_description(cfg, monk
     lib.select_template(lab.path)
     lib.edit_template()
     assert opened == [lab.path]
+    # Restore built-in (right-click › Delete on the lab's edit) brings the original back
+    monkeypatch.setattr(mw, "confirm", lambda *a, **k: True)
+    lib.select_template(lab.path)
+    lib.delete_template()
+    back = next(t for t in templates.list_templates() if t.id == builtin.id)
+    assert back.builtin and len(templates.load_template(builtin.id).layers) == n
+    monkeypatch.setattr(mw, "prompt_text", lambda *a, **k: "dev")
     w.save()
     # Delete at the bottom of Devices deletes the selected device (after confirming)
     w.save()
